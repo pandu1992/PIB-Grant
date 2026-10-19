@@ -399,12 +399,17 @@ state and reward.}
       every number below. Our pipeline supports <em>two</em> sources, selected
       automatically at run time:</p>
       <ul>
-        <li><strong>Real data (optional).</strong> If the M5 competition file
-          <code>sales_train_validation.csv</code> [5] is present on disk, the
-          pipeline loads it directly. M5 contains 42,840 daily Walmart unit-sales
-          series; each item's row of <code>d_1 \\dots d_T</code> columns becomes
-          one demand series. No such file is distributed with this study, and the
-          sandbox used for the reported runs did <em>not</em> contain it.</li>
+        <li><strong>Real data (optional).</strong> The intended real-world source
+          is the <em>M5 Forecasting&ndash;Accuracy</em> competition dataset hosted
+          on Kaggle [5], [26], specifically the file
+          <code>sales_train_validation.csv</code>. Our pipeline will download it
+          automatically from Kaggle when a valid API token is configured and the
+          competition rules have been accepted, or load it from disk if present
+          (including a compressed <code>.gz</code>/<code>.zip</code> copy, since
+          the raw file is $\\approx$114&nbsp;MB). M5 contains 42,840 daily Walmart
+          unit-sales series; each item's row of <code>d_1 \\dots d_T</code> columns
+          becomes one demand series. For the runs reported here this file was
+          <em>not</em> available in the execution sandbox, so it was not used.</li>
         <li><strong>Synthetic data (used here).</strong> When the M5 file is
           absent, the pipeline falls back to a <em>reproducible synthetic
           generator</em> seeded by a fixed integer, so every run is bit-for-bit
@@ -516,11 +521,16 @@ state and reward.}
     tex: `\\subsection{Data collection and provenance}
 We are explicit about data provenance, as it bounds every result below. The
 pipeline supports two sources, selected automatically at run time.
-\\emph{Real data (optional):} if the M5 competition file
-\\texttt{sales\\_train\\_validation.csv}~\\cite{makridakis2022m5} is present, it is
-loaded directly; M5 contains 42{,}840 daily Walmart unit-sales series, and each
-item's $d_1\\dots d_T$ row becomes one demand series. No such file is distributed
-with this study, and the sandbox used for the reported runs did not contain it.
+\\emph{Real data (optional):} the intended real-world source is the \\emph{M5
+Forecasting--Accuracy} competition dataset hosted on
+Kaggle~\\cite{makridakis2022m5,kaggle_m5}, specifically
+\\texttt{sales\\_train\\_validation.csv}. The pipeline downloads it automatically
+from Kaggle when a valid API token is configured and the competition rules have
+been accepted, or loads it from disk if present (including a compressed
+\\texttt{.gz}/\\texttt{.zip} copy, as the raw file is $\\approx 114$~MB). M5
+contains 42{,}840 daily Walmart unit-sales series, and each item's
+$d_1\\dots d_T$ row becomes one demand series. For the reported runs this file
+was not available in the execution sandbox, so it was not used.
 \\emph{Synthetic data (used here):} when the M5 file is absent, the pipeline
 falls back to a reproducible synthetic generator seeded by a fixed integer.
 \\textbf{All numbers reported in this paper come from this synthetic generator},
@@ -709,6 +719,7 @@ const REFERENCES = [
   "J. Schulman, P. Moritz, S. Levine, M. Jordan, and P. Abbeel, ``High-dimensional continuous control using generalized advantage estimation,'' in \\emph{Proc. Int. Conf. Learn. Representations (ICLR)}, 2016.",
   "S. Makridakis, E. Spiliotis, and V. Assimakopoulos, ``The M4 competition: 100,000 time series and 61 forecasting methods,'' \\emph{Int. J. Forecast.}, vol. 36, no. 1, pp. 54--74, 2020.",
   "T. Hochreiter and J. Schmidhuber, ``Long short-term memory,'' \\emph{Neural Comput.}, vol. 9, no. 8, pp. 1735--1780, 1997.",
+  "A. Howard, inversion, M. OConnell, S. Makridakis, E. Spiliotis, and V. Assimakopoulos, ``M5 Forecasting -- Accuracy,'' Kaggle, 2020. [Online]. Available: https://www.kaggle.com/competitions/m5-forecasting-accuracy",
 ];
 /* LaTeX \\bibitem keys, in the SAME order as REFERENCES (1..n). */
 const REF_KEYS = [
@@ -718,7 +729,7 @@ const REF_KEYS = [
   "towers2024gym", "oroojlooy2020newsvendor", "qi2023", "boute2022roadmap",
   "arrow1958", "harris1913", "nahmias2015", "scarf1960ss", "shani2005mdp",
   "sutton1988td", "schulman2015trpo", "schulman2016gae", "makridakis2020m4",
-  "hochreiter1997lstm",
+  "hochreiter1997lstm", "kaggle_m5",
 ];
 /* Plain-text (no \\emph) reference strings for the on-page / Word reference list. */
 function refPlain(r) {

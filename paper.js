@@ -157,65 +157,83 @@ in-browser digital twin.
 
   related: {
     html: `<p><strong>Classical inventory control.</strong> The theory of
-      optimal replenishment is mature. For a single stage with fixed ordering
-      cost, the $(s,S)$ policy is optimal, and without a fixed cost the
-      base-stock policy is optimal; Clark and Scarf established the optimality of
-      base-stock policies in serial multi-echelon systems [6], and Zipkin [7]
-      gives a comprehensive treatment. These results are powerful but assume
-      known, well-behaved demand distributions&mdash;assumptions that the
-      intermittent, seasonal retail demand of the M5 dataset [5] routinely
-      violates.</p>
+      optimal replenishment is mature. The economic order quantity dates to
+      Harris [17]; for stochastic demand, Arrow, Karlin and Scarf [16] laid the
+      mathematical foundations, and Scarf [19] proved the optimality of the
+      $(s,S)$ policy under a fixed ordering cost, while the base-stock policy is
+      optimal without one. Clark and Scarf [6] established base-stock optimality
+      in serial multi-echelon systems; Zipkin [7] and Nahmias [18] give
+      comprehensive treatments. These results are powerful but assume known,
+      well-behaved demand distributions&mdash;assumptions that the intermittent,
+      seasonal retail demand of the M5 [5] and M4 [24] datasets routinely
+      violate.</p>
 
       <p><strong>Reinforcement learning for inventory.</strong> Reinforcement
-      learning [1] sidesteps distributional assumptions by learning directly from
-      interaction. Oroojlooyjadid et al. [3] applied a deep Q-network to the beer
-      game, demonstrating that a learned agent can cope with partners that behave
-      irrationally. Gijsbrechts et al. [4] provided a careful benchmark showing
-      that deep RL can match or approach strong heuristics on lost-sales,
-      dual-sourcing, and multi-echelon problems, while cautioning that tuning and
-      compute cost are substantial. Our environment and PPO agent [2] sit in this
-      tradition, but our focus is narrower and complementary: rather than
-      proposing a new algorithm or beating a heuristic, we isolate the marginal
-      value of a single state feature&mdash;the demand forecast.</p>
+      learning [1], built on temporal-difference learning [21], was transformed
+      by the deep Q-network [8] and by stable policy-gradient methods&mdash;trust
+      region policy optimization [22], generalized advantage estimation [23],
+      and PPO [2]. In inventory control, Oroojlooyjadid et al. [3] applied a deep
+      Q-network to the beer game; Gijsbrechts et al. [4] benchmarked deep RL on
+      lost-sales, dual-sourcing, and multi-echelon problems, cautioning that
+      tuning and compute cost are substantial; and Boute et al. [15] survey the
+      design space in a practitioner roadmap. Our environment and PPO agent [2]
+      sit in this tradition, but our focus is narrower and complementary: rather
+      than proposing a new algorithm or beating a heuristic, we isolate the
+      marginal value of a single state feature&mdash;the demand forecast.</p>
 
       <p><strong>Forecasting and the forecasting&ndash;optimization interface.</strong>
-      The M5 competition [5] established that machine-learning forecasters
-      (notably gradient-boosted trees) are strong on retail demand, yet also that
-      forecast accuracy and downstream decision quality are not the same thing.
-      This gap motivates a line of work on integrating forecasting with
-      optimization. Our study contributes a controlled data point to that
-      interface: we vary forecast <em>availability</em> and forecast
-      <em>model</em> independently and measure the effect on a learned control
-      policy, rather than on a forecast-accuracy metric. The finding that
-      forecaster choice (linear vs.\\ random forest) is statistically
-      indistinguishable downstream, while forecast presence is not, is a concrete
-      illustration of this accuracy&ndash;decision distinction.</p>`,
+      The M5 competition [5] established that machine-learning forecasters are
+      strong on retail demand, yet also that forecast accuracy and downstream
+      decision quality are not the same thing. A complementary line integrates
+      the two steps end-to-end: Oroojlooyjadid et al. [13] applied deep learning
+      directly to the newsvendor problem, and Qi et al. [14] proposed a practical
+      end-to-end deep model mapping features to replenishment decisions; deep
+      sequence models such as the LSTM [25] underpin many such forecasters. Our
+      study contributes a controlled data point to this interface: we vary
+      forecast <em>availability</em> and forecast <em>model</em> independently and
+      measure the effect on a learned control policy, rather than on a
+      forecast-accuracy metric. The finding that forecaster choice (linear vs.\\
+      random forest [9]) is statistically indistinguishable downstream, while
+      forecast presence is not, concretely illustrates this
+      accuracy&ndash;decision distinction.</p>`,
     tex: `\\textbf{Classical inventory control.} The theory of optimal
-replenishment is mature. For a single stage with a fixed ordering cost the
-$(s,S)$ policy is optimal, and without a fixed cost the base-stock policy is
-optimal; Clark and Scarf established the optimality of base-stock policies in
-serial multi-echelon systems~\\cite{clark1960}, and Zipkin~\\cite{zipkin2000}
-gives a comprehensive treatment. These results assume known, well-behaved demand
+replenishment is mature. The economic order quantity dates to
+Harris~\\cite{harris1913}; for stochastic demand, Arrow, Karlin and
+Scarf~\\cite{arrow1958} laid the foundations, and Scarf~\\cite{scarf1960ss} proved
+the optimality of the $(s,S)$ policy under a fixed ordering cost, while the
+base-stock policy is optimal without one. Clark and Scarf~\\cite{clark1960}
+established base-stock optimality in serial multi-echelon systems;
+Zipkin~\\cite{zipkin2000} and Nahmias~\\cite{nahmias2015} give comprehensive
+treatments. These results assume known, well-behaved demand
 distributions---assumptions that the intermittent, seasonal retail demand of the
-M5 dataset~\\cite{makridakis2022m5} routinely violates.
+M5~\\cite{makridakis2022m5} and M4~\\cite{makridakis2020m4} datasets routinely
+violate.
 
 \\textbf{Reinforcement learning for inventory.} Reinforcement
-learning~\\cite{sutton2018} sidesteps distributional assumptions by learning
-from interaction. Oroojlooyjadid et al.~\\cite{oroojlooy2022beer} applied a deep
-Q-network to the beer game, showing a learned agent can cope with partners that
-behave irrationally. Gijsbrechts et al.~\\cite{gijsbrechts2022} benchmarked deep
-RL on lost-sales, dual-sourcing, and multi-echelon problems, showing it can
-match strong heuristics while cautioning that tuning and compute cost are
-substantial. Our PPO agent~\\cite{schulman2017ppo} sits in this tradition, but
-our focus is complementary: rather than proposing a new algorithm, we isolate
-the marginal value of a single state feature---the demand forecast.
+learning~\\cite{sutton2018}, built on temporal-difference
+learning~\\cite{sutton1988td}, was transformed by the deep
+Q-network~\\cite{mnih2015} and by stable policy-gradient methods---trust region
+policy optimization~\\cite{schulman2015trpo}, generalized advantage
+estimation~\\cite{schulman2016gae}, and PPO~\\cite{schulman2017ppo}. In inventory
+control, Oroojlooyjadid et al.~\\cite{oroojlooy2022beer} applied a deep Q-network
+to the beer game; Gijsbrechts et al.~\\cite{gijsbrechts2022} benchmarked deep RL
+on lost-sales, dual-sourcing, and multi-echelon problems, cautioning that tuning
+and compute cost are substantial; and Boute et al.~\\cite{boute2022roadmap}
+survey the design space. Our PPO agent sits in this tradition, but our focus is
+complementary: rather than proposing a new algorithm, we isolate the marginal
+value of a single state feature---the demand forecast.
 
 \\textbf{The forecasting--optimization interface.} The M5
 competition~\\cite{makridakis2022m5} established that machine-learning
 forecasters are strong on retail demand, yet also that forecast accuracy and
-downstream decision quality differ. Our study contributes a controlled data
-point to this interface: we vary forecast \\emph{availability} and forecast
-\\emph{model} independently and measure the effect on a learned control policy
+downstream decision quality differ. A complementary line integrates the two
+steps end-to-end: Oroojlooyjadid et al.~\\cite{oroojlooy2020newsvendor} applied
+deep learning to the newsvendor problem, and Qi et al.~\\cite{qi2023} proposed a
+practical end-to-end deep model; deep sequence models such as the
+LSTM~\\cite{hochreiter1997lstm} underpin many such forecasters. Our study
+contributes a controlled data point to this interface: we vary forecast
+\\emph{availability} and forecast \\emph{model} independently and measure the
+effect on a learned control policy
 rather than on a forecast-accuracy metric. That forecaster choice (linear vs.\\
 random forest) is statistically indistinguishable downstream, while forecast
 presence is not, concretely illustrates this accuracy--decision distinction.`,
@@ -228,7 +246,8 @@ presence is not, concretely illustrates this accuracy--decision distinction.`,
       agent observes a state $s_t$, chooses an order quantity $a_t$, receives a
       reward $r_t$, and transitions to $s_{t+1}$. The agent maximizes the
       expected discounted return $\\mathbb{E}\\!\\left[\\sum_{t} \\gamma^{t}
-      r_t\\right]$ with discount $\\gamma \\in (0,1]$.</p>
+      r_t\\right]$ with discount $\\gamma \\in (0,1]$. MDPs have long been used to
+      cast sequential business decisions as learnable control problems [20].</p>
 
       <h3 class="psub">B. Demand and the forecaster</h3>
       <p>Let $d_t \\ge 0$ be demand on day $t$. The forecaster
@@ -310,7 +329,8 @@ We model single-item replenishment as a discrete-time Markov Decision Process
 (MDP) $(\\mathcal{S},\\mathcal{A},P,r,\\gamma)$. At day $t$ the agent observes a
 state $s_t$, chooses an order $a_t$, receives reward $r_t$, and transitions to
 $s_{t+1}$, maximizing $\\mathbb{E}[\\sum_t \\gamma^t r_t]$ with
-$\\gamma\\in(0,1]$.
+$\\gamma\\in(0,1]$. MDPs are a standard lens for sequential business
+decisions~\\cite{shani2005mdp}.
 
 \\subsection{Demand and the forecaster}
 Let $d_t\\ge 0$ be demand on day $t$. The forecaster $\\hat f_\\theta$ predicts
@@ -374,18 +394,49 @@ state and reward.}
 
   results: {
     html: `<h3 class="psub">A. Experimental setup</h3>
-      <p>We evaluate on multiple demand profiles, each a time series of roughly a
-      thousand days. Real M5 data [5] is used when available; otherwise a
-      reproducible synthetic generator produces strongly seasonal demand
-      (weekly and yearly components plus a trend and noise). The results below
-      use the synthetic generator, which we flag explicitly. For each item we
-      train both agents (with/without forecast) using each forecaster (linear,
-      random forest) under three scenarios: a <em>base</em> scenario, a
-      <em>noisy-forecast</em> scenario (Gaussian perturbation of $\\hat d_t$),
-      and a <em>carbon-aware</em> scenario (emission penalty active). Each
-      configuration is repeated over random seeds. The primary metric is the
-      mean per-step reward; the quantity of interest is the <em>advantage</em>
-      $\\Delta = \\bar r_{\\text{fc}} - \\bar r_{\\text{base}}$.</p>
+      <p><strong>Data collection and provenance.</strong> We are explicit about
+      where the demand data comes from, because it bounds the interpretation of
+      every number below. Our pipeline supports <em>two</em> sources, selected
+      automatically at run time:</p>
+      <ul>
+        <li><strong>Real data (optional).</strong> If the M5 competition file
+          <code>sales_train_validation.csv</code> [5] is present on disk, the
+          pipeline loads it directly. M5 contains 42,840 daily Walmart unit-sales
+          series; each item's row of <code>d_1 \\dots d_T</code> columns becomes
+          one demand series. No such file is distributed with this study, and the
+          sandbox used for the reported runs did <em>not</em> contain it.</li>
+        <li><strong>Synthetic data (used here).</strong> When the M5 file is
+          absent, the pipeline falls back to a <em>reproducible synthetic
+          generator</em> seeded by a fixed integer, so every run is bit-for-bit
+          repeatable. <strong>All numbers reported in this paper come from this
+          synthetic generator</strong>, not from real retail data; we state this
+          plainly to avoid overclaiming.</li>
+      </ul>
+      <p>Each synthetic series of length $T$ (here $T\\approx 1000$ days) for item
+      $i$ is generated as</p>
+      $$d_t^{(i)} = \\big\\lfloor \\max(0,\\; b_i + A^w_i\\sin(\\tfrac{2\\pi t}{7}+\\varphi^w_i)
+        + A^y_i\\sin(\\tfrac{2\\pi t}{365}+\\varphi^y_i) + \\kappa_i t + \\varepsilon_t)\\big\\rceil,$$
+      <p>with a base level $b_i$, weekly and yearly seasonal amplitudes
+      $A^w_i, A^y_i$ and phases $\\varphi^w_i,\\varphi^y_i$, a small linear trend
+      $\\kappa_i$, and Gaussian noise $\\varepsilon_t\\sim\\mathcal{N}(0,\\sigma^2)$;
+      all drawn from fixed ranges by the seeded generator. The weekly and yearly
+      terms are deliberately strong so that <em>anticipation</em> is rewarded,
+      making this a fair&mdash;if idealized&mdash;testbed for the forecast
+      question. We emphasize that synthetic demand is a controlled stand-in; the
+      intermittent, promotion-driven structure of real M5 series [5], [23] is
+      only partially captured, and confirming the findings on M5 is immediate
+      future work (Section&nbsp;V).</p>
+
+      <p><strong>Protocol.</strong> For each item we train both agents
+      (with/without forecast) using each forecaster&mdash;ordinary least squares
+      and a random forest [9]&mdash;under three scenarios: a <em>base</em>
+      scenario, a <em>noisy-forecast</em> scenario (Gaussian perturbation of
+      $\\hat d_t$), and a <em>carbon-aware</em> scenario (emission penalty
+      active). Each configuration is repeated over random seeds. Forecasters are
+      implemented with scikit-learn [10] and the PPO agent [2] with
+      Stable-Baselines3 [11] on the Gymnasium interface [12]. The primary metric
+      is the mean per-step reward; the quantity of interest is the
+      <em>advantage</em> $\\Delta = \\bar r_{\\text{fc}} - \\bar r_{\\text{base}}$.</p>
 
       <h3 class="psub">B. Does the forecast help?</h3>
       <p>Table I reports mean rewards. Across all configurations the forecast
@@ -445,15 +496,39 @@ state and reward.}
       validity. None of these undermines the central, repeated pattern: the
       forecast helps on average, unevenly across items, and its <em>presence</em>
       matters more than its <em>model</em>.</p>`,
-    tex: `\\subsection{Experimental setup}
-We evaluate on multiple demand profiles, each a series of roughly a thousand
-days. Real M5 data~\\cite{makridakis2022m5} is used when available; otherwise a
-reproducible synthetic generator produces strongly seasonal demand. The results
-below use the synthetic generator, which we flag explicitly. For each item we
-train both agents (with/without forecast) using each forecaster (linear, random
-forest) under three scenarios: \\emph{base}, \\emph{noisy-forecast} (Gaussian
-perturbation of $\\hat d_t$), and \\emph{carbon-aware} (emission penalty). Each
-configuration is repeated over seeds. The primary metric is mean per-step
+    tex: `\\subsection{Data collection and provenance}
+We are explicit about data provenance, as it bounds every result below. The
+pipeline supports two sources, selected automatically at run time.
+\\emph{Real data (optional):} if the M5 competition file
+\\texttt{sales\\_train\\_validation.csv}~\\cite{makridakis2022m5} is present, it is
+loaded directly; M5 contains 42{,}840 daily Walmart unit-sales series, and each
+item's $d_1\\dots d_T$ row becomes one demand series. No such file is distributed
+with this study, and the sandbox used for the reported runs did not contain it.
+\\emph{Synthetic data (used here):} when the M5 file is absent, the pipeline
+falls back to a reproducible synthetic generator seeded by a fixed integer.
+\\textbf{All numbers reported in this paper come from this synthetic generator},
+not from real retail data. Each series of length $T\\approx 1000$ for item $i$ is
+\\begin{equation}
+d_t^{(i)}=\\Big\\lfloor\\max\\big(0,\\, b_i + A^w_i\\sin(\\tfrac{2\\pi t}{7}+\\varphi^w_i)
++ A^y_i\\sin(\\tfrac{2\\pi t}{365}+\\varphi^y_i) + \\kappa_i t + \\varepsilon_t\\big)\\Big\\rceil,
+\\end{equation}
+with base level $b_i$, seasonal amplitudes/phases $A^w_i,A^y_i,\\varphi^w_i,
+\\varphi^y_i$, trend $\\kappa_i$, and noise
+$\\varepsilon_t\\sim\\mathcal{N}(0,\\sigma^2)$, all drawn from fixed ranges by the
+seeded generator. The seasonal terms are deliberately strong so anticipation is
+rewarded. Synthetic demand is a controlled stand-in; the intermittent,
+promotion-driven structure of real M5 series~\\cite{makridakis2022m5,
+makridakis2020m4} is only partially captured, and confirming the findings on M5
+is immediate future work (Section~\\ref{sec:conclusion}).
+
+\\subsection{Protocol}
+For each item we train both agents (with/without forecast) using each
+forecaster---ordinary least squares and a random forest~\\cite{breiman2001}---under
+three scenarios: \\emph{base}, \\emph{noisy-forecast} (Gaussian perturbation of
+$\\hat d_t$), and \\emph{carbon-aware} (emission penalty). Each configuration is
+repeated over seeds. Forecasters use scikit-learn~\\cite{pedregosa2011}; the PPO
+agent~\\cite{schulman2017ppo} uses Stable-Baselines3~\\cite{raffin2021sb3} on the
+Gymnasium interface~\\cite{towers2024gym}. The primary metric is mean per-step
 reward; the quantity of interest is the advantage
 $\\Delta=\\bar r_{\\mathrm{fc}}-\\bar r_{\\mathrm{base}}$.
 
@@ -533,11 +608,22 @@ pattern: the forecast helps on average, unevenly across items, and its
       <em>heterogeneous</em> across demand profiles, and forecast
       <em>availability</em> dominates forecast <em>model choice</em>. We release a
       reproducible, dependency-light pipeline and an interactive in-browser
-      digital twin so that the result can be inspected, re-run on real M5 data,
-      and extended&mdash;for example to longer training, multi-echelon settings,
-      and probabilistic forecasts whose uncertainty, not just point value, is
-      exposed to the agent.</p>`,
-    tex: `We asked a deliberately narrow question---does adding a demand forecast
+      digital twin so that the result can be inspected and extended.</p>
+      <p><strong>Future work.</strong> Three directions follow directly. First,
+      <em>real data</em>: re-running the identical pipeline on the M5 series [5]
+      will test whether the synthetic-demand findings transfer to intermittent,
+      promotion-driven retail demand. Second, <em>richer settings</em>:
+      extending from a single stage to dual-sourcing and multi-echelon systems
+      [4], where the value of anticipation&mdash;and therefore of a
+      forecast&mdash;may be larger. Third, <em>end-to-end and probabilistic
+      forecasting</em>: coupling the forecaster and the policy more tightly, as in
+      end-to-end newsvendor and inventory models [13], [14], and exposing the
+      agent to forecast <em>uncertainty</em> rather than a point estimate. We
+      conjecture that the "availability over model choice" effect will weaken
+      precisely in regimes where distributional forecast information becomes
+      decision-relevant.</p>`,
+    tex: `\\label{sec:conclusion}
+We asked a deliberately narrow question---does adding a demand forecast
 to the state improve a PPO inventory policy, and by how much?---and answered it
 with a controlled ablation holding the algorithm, environment, and reward fixed.
 With normalized observations, a bounded service-level reward, and an order lead
@@ -546,9 +632,19 @@ significant mean advantage ($+0.146$, $\\approx 19\\%$, $t=4.54$). Two
 qualifications matter as much as the headline: the benefit is \\emph{heterogeneous}
 across demand profiles, and forecast \\emph{availability} dominates forecast
 \\emph{model choice}. We release a reproducible, dependency-light pipeline and an
-interactive in-browser digital twin so the result can be inspected, re-run on
-real M5 data, and extended---e.g.\\ to longer training, multi-echelon settings,
-and probabilistic forecasts whose uncertainty is exposed to the agent.`,
+interactive in-browser digital twin so the result can be inspected and extended.
+
+Three directions follow directly. First, \\emph{real data}: re-running the
+identical pipeline on the M5 series~\\cite{makridakis2022m5} tests whether the
+synthetic-demand findings transfer to intermittent, promotion-driven retail
+demand. Second, \\emph{richer settings}: extending from a single stage to
+dual-sourcing and multi-echelon systems~\\cite{gijsbrechts2022}, where the value
+of anticipation may be larger. Third, \\emph{end-to-end and probabilistic
+forecasting}: coupling forecaster and policy more tightly, as in end-to-end
+newsvendor and inventory models~\\cite{oroojlooy2020newsvendor,qi2023}, and
+exposing the agent to forecast \\emph{uncertainty} rather than a point estimate.
+We conjecture the \`\`availability over model choice'' effect weakens precisely
+where distributional forecast information becomes decision-relevant.`,
   },
 };
 
@@ -561,11 +657,34 @@ const REFERENCES = [
   "S. Makridakis, E. Spiliotis, and V. Assimakopoulos, ``The M5 accuracy competition: Results, findings, and conclusions,'' \\emph{Int. J. Forecast.}, vol. 38, no. 4, pp. 1346--1364, 2022.",
   "A. J. Clark and H. Scarf, ``Optimal policies for a multi-echelon inventory problem,'' \\emph{Manag. Sci.}, vol. 6, no. 4, pp. 475--490, 1960.",
   "P. H. Zipkin, \\emph{Foundations of Inventory Management}. New York, NY, USA: McGraw-Hill, 2000.",
+  "V. Mnih et al., ``Human-level control through deep reinforcement learning,'' \\emph{Nature}, vol. 518, no. 7540, pp. 529--533, 2015.",
+  "L. Breiman, ``Random forests,'' \\emph{Mach. Learn.}, vol. 45, no. 1, pp. 5--32, 2001.",
+  "F. Pedregosa et al., ``Scikit-learn: Machine learning in Python,'' \\emph{J. Mach. Learn. Res.}, vol. 12, pp. 2825--2830, 2011.",
+  "A. Raffin, A. Hill, A. Gleave, A. Kanervisto, M. Ernestus, and N. Dormann, ``Stable-Baselines3: Reliable reinforcement learning implementations,'' \\emph{J. Mach. Learn. Res.}, vol. 22, no. 268, pp. 1--8, 2021.",
+  "M. Towers et al., ``Gymnasium: A standard interface for reinforcement learning environments,'' \\emph{arXiv:2407.17032}, 2024.",
+  "A. Oroojlooyjadid, L. V. Snyder, and M. Tak\\'{a}\\v{c}, ``Applying deep learning to the newsvendor problem,'' \\emph{IISE Trans.}, vol. 52, no. 4, pp. 444--463, 2020.",
+  "M. Qi, Y. Shi, Y. Qi, C. Ma, R. Yuan, D. Wu, and Z.-J. M. Shen, ``A practical end-to-end inventory management model with deep learning,'' \\emph{Manag. Sci.}, vol. 69, no. 2, pp. 759--773, 2023.",
+  "R. N. Boute, J. Gijsbrechts, W. van Jaarsveld, and N. Vanvuchelen, ``Deep reinforcement learning for inventory control: A roadmap,'' \\emph{Eur. J. Oper. Res.}, vol. 298, no. 2, pp. 401--412, 2022.",
+  "K. J. Arrow, S. Karlin, and H. Scarf, \\emph{Studies in the Mathematical Theory of Inventory and Production}. Stanford, CA, USA: Stanford Univ. Press, 1958.",
+  "F. W. Harris, ``How many parts to make at once,'' \\emph{Factory, The Magazine of Management}, vol. 10, no. 2, pp. 135--136, 1913.",
+  "S. Nahmias and T. L. Olsen, \\emph{Production and Operations Analysis}, 7th ed. Long Grove, IL, USA: Waveland Press, 2015.",
+  "H. Scarf, ``The optimality of $(s,S)$ policies in the dynamic inventory problem,'' in \\emph{Mathematical Methods in the Social Sciences}, K. J. Arrow, S. Karlin, and P. Suppes, Eds. Stanford, CA, USA: Stanford Univ. Press, 1960, pp. 196--202.",
+  "G. Shani, D. Heckerman, and R. I. Brafman, ``An MDP-based recommender system,'' \\emph{J. Mach. Learn. Res.}, vol. 6, pp. 1265--1295, 2005.",
+  "R. S. Sutton, ``Learning to predict by the methods of temporal differences,'' \\emph{Mach. Learn.}, vol. 3, no. 1, pp. 9--44, 1988.",
+  "J. Schulman, S. Levine, P. Abbeel, M. Jordan, and P. Moritz, ``Trust region policy optimization,'' in \\emph{Proc. Int. Conf. Mach. Learn. (ICML)}, 2015, pp. 1889--1897.",
+  "J. Schulman, P. Moritz, S. Levine, M. Jordan, and P. Abbeel, ``High-dimensional continuous control using generalized advantage estimation,'' in \\emph{Proc. Int. Conf. Learn. Representations (ICLR)}, 2016.",
+  "S. Makridakis, E. Spiliotis, and V. Assimakopoulos, ``The M4 competition: 100,000 time series and 61 forecasting methods,'' \\emph{Int. J. Forecast.}, vol. 36, no. 1, pp. 54--74, 2020.",
+  "T. Hochreiter and J. Schmidhuber, ``Long short-term memory,'' \\emph{Neural Comput.}, vol. 9, no. 8, pp. 1735--1780, 1997.",
 ];
 /* LaTeX \\bibitem keys, in the SAME order as REFERENCES (1..n). */
 const REF_KEYS = [
   "sutton2018", "schulman2017ppo", "oroojlooy2022beer",
   "gijsbrechts2022", "makridakis2022m5", "clark1960", "zipkin2000",
+  "mnih2015", "breiman2001", "pedregosa2011", "raffin2021sb3",
+  "towers2024gym", "oroojlooy2020newsvendor", "qi2023", "boute2022roadmap",
+  "arrow1958", "harris1913", "nahmias2015", "scarf1960ss", "shani2005mdp",
+  "sutton1988td", "schulman2015trpo", "schulman2016gae", "makridakis2020m4",
+  "hochreiter1997lstm",
 ];
 /* Plain-text (no \\emph) reference strings for the on-page / Word reference list. */
 function refPlain(r) {

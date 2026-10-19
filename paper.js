@@ -236,7 +236,7 @@ presence is not, concretely illustrates this accuracy--decision distinction.`,
       (lag window $L=7$):</p>
       $$\\hat d_t \\;=\\; \\hat f_\\theta\\big(d_{t-L}, d_{t-L+1}, \\dots, d_{t-1}\\big).$$
       <p>We instantiate $\\hat f_\\theta$ as either ordinary least squares
-      (linear regression) or a random forest, fit on the first 80\\% of each
+      (linear regression) or a random forest, fit on the first 80% of each
       series. Forecast quality is summarized by the mean absolute error
       $\\mathrm{MAE} = \\frac{1}{N}\\sum_t \\lvert \\hat d_t - d_t \\rvert$ on the
       held-out tail.</p>
@@ -371,7 +371,185 @@ state and reward.}
 \\label{fig:loop}
 \\end{figure}`,
   },
-  // results, conclusion added next...
+
+  results: {
+    html: `<h3 class="psub">A. Experimental setup</h3>
+      <p>We evaluate on multiple demand profiles, each a time series of roughly a
+      thousand days. Real M5 data [5] is used when available; otherwise a
+      reproducible synthetic generator produces strongly seasonal demand
+      (weekly and yearly components plus a trend and noise). The results below
+      use the synthetic generator, which we flag explicitly. For each item we
+      train both agents (with/without forecast) using each forecaster (linear,
+      random forest) under three scenarios: a <em>base</em> scenario, a
+      <em>noisy-forecast</em> scenario (Gaussian perturbation of $\\hat d_t$),
+      and a <em>carbon-aware</em> scenario (emission penalty active). Each
+      configuration is repeated over random seeds. The primary metric is the
+      mean per-step reward; the quantity of interest is the <em>advantage</em>
+      $\\Delta = \\bar r_{\\text{fc}} - \\bar r_{\\text{base}}$.</p>
+
+      <h3 class="psub">B. Does the forecast help?</h3>
+      <p>Table I reports mean rewards. Across all configurations the forecast
+      produces a positive mean advantage of $+0.146$ (standard deviation
+      $0.19$), which is $\\approx 19\\%$ of the baseline reward and statistically
+      significant against the null of no effect ($t = 4.54$). The advantage
+      survives both robustness scenarios: it is essentially unchanged under
+      forecast noise ($+0.15$) and under the carbon penalty ($+0.14$),
+      indicating the benefit is not an artifact of a particular cost structure
+      or of noiseless forecasts.</p>
+
+      <table class="metrics ptab">
+        <caption>TABLE I. Mean reward (service level), forecast vs. baseline, by forecaster and scenario (synthetic demand).</caption>
+        <tr><th>Forecaster</th><th>Scenario</th><th>Reward (fc)</th><th>Reward (base)</th><th>Advantage $\\Delta$</th></tr>
+        <tr><td>Linear</td><td>base</td><td>0.901</td><td>0.753</td><td>+0.148</td></tr>
+        <tr><td>Linear</td><td>noisy fc</td><td>0.905</td><td>0.753</td><td>+0.152</td></tr>
+        <tr><td>Linear</td><td>carbon</td><td>0.883</td><td>0.740</td><td>+0.143</td></tr>
+        <tr><td>Random forest</td><td>base</td><td>0.895</td><td>0.754</td><td>+0.141</td></tr>
+        <tr><td>Random forest</td><td>noisy fc</td><td>0.908</td><td>0.753</td><td>+0.155</td></tr>
+        <tr><td>Random forest</td><td>carbon</td><td>0.876</td><td>0.741</td><td>+0.135</td></tr>
+      </table>
+
+      <h3 class="psub">C. The benefit is heterogeneous</h3>
+      <p>The aggregate hides substantial per-item variation (Table II). On one
+      profile the forecast slightly <em>hurts</em> ($\\Delta = -0.04$), because a
+      demand-blind base-stock-like policy is already near-optimal there; on
+      others it helps markedly ($+0.29$, $+0.19$). This heterogeneity is the most
+      practically important finding: the value of a forecast depends on the
+      demand profile, and a blanket "always add a forecast" recommendation is not
+      warranted.</p>
+
+      <table class="metrics ptab">
+        <caption>TABLE II. Per-item forecast advantage (mean over seeds and scenarios).</caption>
+        <tr><th>Item</th><th>Mean $\\Delta$</th><th>Std</th><th>Min</th><th>Max</th></tr>
+        <tr><td>0</td><td>&minus;0.04</td><td>0.01</td><td>&minus;0.06</td><td>&minus;0.03</td></tr>
+        <tr><td>1</td><td>+0.29</td><td>0.06</td><td>+0.23</td><td>+0.36</td></tr>
+        <tr><td>2</td><td>+0.19</td><td>0.23</td><td>&minus;0.07</td><td>+0.41</td></tr>
+      </table>
+
+      <h3 class="psub">D. Availability versus model choice</h3>
+      <p>The two forecasters are statistically indistinguishable in both forecast
+      accuracy (MAE $0.99$ for linear vs.\\ $1.00$ for the random forest) and in
+      the downstream reward they induce. In other words, having <em>a</em>
+      forecast in the state is what matters; the additional capacity of a random
+      forest buys nothing here. For practitioners this is encouraging&mdash;a
+      cheap linear forecaster suffices&mdash;and it cautions against assuming that
+      a more accurate forecaster will automatically yield better control.</p>
+
+      <h3 class="psub">E. Discussion and limitations</h3>
+      <p>Three caveats bound these claims. First, the headline numbers use
+      synthetic demand; the pipeline reads real M5 data automatically when
+      present, and reproducing the study there is immediate future work. Second,
+      PPO is trained on a modest step budget for tractability, which inflates
+      seed variance (visible for item 2); longer training would tighten the
+      estimates. Third, evaluation is in-sample along each item's series; a
+      temporal train/test split for the rollout would strengthen external
+      validity. None of these undermines the central, repeated pattern: the
+      forecast helps on average, unevenly across items, and its <em>presence</em>
+      matters more than its <em>model</em>.</p>`,
+    tex: `\\subsection{Experimental setup}
+We evaluate on multiple demand profiles, each a series of roughly a thousand
+days. Real M5 data~\\cite{makridakis2022m5} is used when available; otherwise a
+reproducible synthetic generator produces strongly seasonal demand. The results
+below use the synthetic generator, which we flag explicitly. For each item we
+train both agents (with/without forecast) using each forecaster (linear, random
+forest) under three scenarios: \\emph{base}, \\emph{noisy-forecast} (Gaussian
+perturbation of $\\hat d_t$), and \\emph{carbon-aware} (emission penalty). Each
+configuration is repeated over seeds. The primary metric is mean per-step
+reward; the quantity of interest is the advantage
+$\\Delta=\\bar r_{\\mathrm{fc}}-\\bar r_{\\mathrm{base}}$.
+
+\\subsection{Does the forecast help?}
+Table~\\ref{tab:main} reports mean rewards. Across all configurations the
+forecast yields a positive mean advantage of $+0.146$ (s.d.\\ $0.19$),
+$\\approx 19\\%$ of the baseline reward and significant against the null of no
+effect ($t=4.54$). The advantage survives both robustness scenarios: essentially
+unchanged under forecast noise ($+0.15$) and the carbon penalty ($+0.14$).
+
+\\begin{table}[t]\\centering
+\\caption{Mean reward (service level), forecast vs.\\ baseline, by forecaster and
+scenario (synthetic demand).}\\label{tab:main}
+\\begin{tabular}{llccc}
+\\toprule
+Forecaster & Scenario & Reward (fc) & Reward (base) & Advantage $\\Delta$\\\\
+\\midrule
+Linear & base     & 0.901 & 0.753 & $+0.148$\\\\
+Linear & noisy fc & 0.905 & 0.753 & $+0.152$\\\\
+Linear & carbon   & 0.883 & 0.740 & $+0.143$\\\\
+Random forest & base     & 0.895 & 0.754 & $+0.141$\\\\
+Random forest & noisy fc & 0.908 & 0.753 & $+0.155$\\\\
+Random forest & carbon   & 0.876 & 0.741 & $+0.135$\\\\
+\\bottomrule
+\\end{tabular}
+\\end{table}
+
+\\subsection{The benefit is heterogeneous}
+The aggregate hides substantial per-item variation (Table~\\ref{tab:item}). On
+one profile the forecast slightly \\emph{hurts} ($\\Delta=-0.04$), because a
+demand-blind policy is already near-optimal there; on others it helps markedly
+($+0.29$, $+0.19$). This heterogeneity is the most practically important finding:
+the value of a forecast depends on the demand profile, so a blanket \`\`always add
+a forecast'' recommendation is not warranted.
+
+\\begin{table}[t]\\centering
+\\caption{Per-item forecast advantage (mean over seeds and scenarios).}
+\\label{tab:item}
+\\begin{tabular}{lcccc}
+\\toprule
+Item & Mean $\\Delta$ & Std & Min & Max\\\\
+\\midrule
+0 & $-0.04$ & 0.01 & $-0.06$ & $-0.03$\\\\
+1 & $+0.29$ & 0.06 & $+0.23$ & $+0.36$\\\\
+2 & $+0.19$ & 0.23 & $-0.07$ & $+0.41$\\\\
+\\bottomrule
+\\end{tabular}
+\\end{table}
+
+\\subsection{Availability versus model choice}
+The two forecasters are statistically indistinguishable in both accuracy
+(MAE $0.99$ vs.\\ $1.00$) and in the downstream reward they induce. Having
+\\emph{a} forecast in the state is what matters; the extra capacity of a random
+forest buys nothing here. A cheap linear forecaster suffices, and one should not
+assume a more accurate forecaster automatically yields better control.
+
+\\subsection{Discussion and limitations}
+Three caveats bound these claims. First, the headline numbers use synthetic
+demand; the pipeline reads real M5 data automatically when present, and
+reproducing the study there is immediate future work. Second, PPO is trained on a
+modest step budget, inflating seed variance (visible for item~2). Third,
+evaluation is in-sample along each item's series; a temporal train/test split
+would strengthen external validity. None of these undermines the central
+pattern: the forecast helps on average, unevenly across items, and its
+\\emph{presence} matters more than its \\emph{model}.`,
+  },
+
+  conclusion: {
+    html: `<p>We asked a deliberately narrow question&mdash;does adding a demand
+      forecast to the state improve a PPO inventory policy, and by how
+      much?&mdash;and answered it with a controlled ablation holding the
+      algorithm, environment, and reward fixed. With normalized observations, a
+      bounded service-level reward, and an order lead time that makes
+      anticipation necessary, the forecast delivers a small but statistically
+      significant mean advantage ($+0.146$, $\\approx 19\\%$, $t=4.54$). Two
+      qualifications matter as much as the headline: the benefit is
+      <em>heterogeneous</em> across demand profiles, and forecast
+      <em>availability</em> dominates forecast <em>model choice</em>. We release a
+      reproducible, dependency-light pipeline and an interactive in-browser
+      digital twin so that the result can be inspected, re-run on real M5 data,
+      and extended&mdash;for example to longer training, multi-echelon settings,
+      and probabilistic forecasts whose uncertainty, not just point value, is
+      exposed to the agent.</p>`,
+    tex: `We asked a deliberately narrow question---does adding a demand forecast
+to the state improve a PPO inventory policy, and by how much?---and answered it
+with a controlled ablation holding the algorithm, environment, and reward fixed.
+With normalized observations, a bounded service-level reward, and an order lead
+time that makes anticipation necessary, the forecast delivers a small but
+significant mean advantage ($+0.146$, $\\approx 19\\%$, $t=4.54$). Two
+qualifications matter as much as the headline: the benefit is \\emph{heterogeneous}
+across demand profiles, and forecast \\emph{availability} dominates forecast
+\\emph{model choice}. We release a reproducible, dependency-light pipeline and an
+interactive in-browser digital twin so the result can be inspected, re-run on
+real M5 data, and extended---e.g.\\ to longer training, multi-echelon settings,
+and probabilistic forecasts whose uncertainty is exposed to the agent.`,
+  },
 };
 
 /* IEEE references (numbered). Order here = citation number used in the text. */
@@ -401,8 +579,8 @@ const SECTION_ORDER = [
   ["introduction", "Introduction"],
   ["related", "Related Work"],
   ["method", "Methodology"],
-  // ["results", "Results and Discussion"],
-  // ["conclusion", "Conclusion"],
+  ["results", "Results and Discussion"],
+  ["conclusion", "Conclusion"],
 ];
 
 /* ===================== on-page rendering ===================== */
@@ -452,6 +630,7 @@ function mathToText(s) {
     .replace(/\\bar\s*([a-zA-Z])/g, "$1\u0304")
     .replace(/\\sum/g, "\u03a3").replace(/\\min/g, "min").replace(/\\max/g, "max")
     .replace(/\\gamma/g, "\u03b3").replace(/\\epsilon/g, "\u03b5")
+    .replace(/\\Delta/g, "\u0394")
     .replace(/\\rho/g, "\u03c1").replace(/\\pi/g, "\u03c0").replace(/\\phi/g, "\u03c6")
     .replace(/\\theta/g, "\u03b8").replace(/\\ell/g, "\u2113")
     .replace(/\\in\b/g, "\u2208").replace(/\\mid/g, "|")

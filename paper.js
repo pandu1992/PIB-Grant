@@ -28,17 +28,21 @@ const PAPER = {
       We study this question with a Proximal Policy Optimization (PPO) agent on
       a lead-time inventory environment, comparing policies trained
       <em>with</em> and <em>without</em> a one-step demand forecast across
-      multiple demand profiles, two forecasting models (linear regression and a
-      random forest), repeated random seeds, and robustness scenarios (noisy
-      forecasts and a carbon-aware cost term). We find that, once observations
-      are normalized and the reward is shaped as a bounded service level, the
-      forecast yields a statistically significant mean advantage of
-      $+0.146$ ($\\approx 19\\%$, $t=4.54$). Crucially, the benefit is
-      <em>heterogeneous</em> across items (per-item advantage
-      $-0.04,\\,+0.29,\\,+0.19$) and the two forecasting models are
-      statistically indistinguishable, indicating that forecast
-      <em>availability</em> matters far more than forecast model choice. We
-      release a fully reproducible pipeline and an interactive in-browser
+      two demand regimes&mdash;a smooth synthetic generator and the real,
+      highly intermittent Walmart series from the M5 Forecasting competition
+      (Kaggle)&mdash;two forecasting models (linear regression and a random
+      forest), repeated random seeds, and robustness scenarios (noisy forecasts
+      and a carbon-aware cost term). The headline result <em>depends on the
+      demand regime</em>. On smooth synthetic demand the forecast yields a
+      significant mean advantage of $+0.146$ ($\\approx 19\\%$, $t=4.54$). On the
+      real M5 items, which are $74$&ndash;$91\\%$ zeros, the <em>same</em>
+      pipeline shows the forecast <em>hurts</em>: a mean advantage of $-2.13$
+      ($t=-12.1$), helping in only $17\\%$ of runs. In both regimes the two
+      forecasters are statistically indistinguishable, so forecast model choice
+      is immaterial; what matters is whether a next-step point forecast is
+      informative at all&mdash;which it is for seasonal demand but not for
+      sparse, intermittent sales. We release a fully reproducible pipeline
+      (which fetches the M5 data automatically) and an interactive in-browser
       digital twin.`,
     tex: `Inventory control under uncertain demand is a classic sequential
 decision problem, and reinforcement learning (RL) is increasingly used to learn
@@ -47,16 +51,21 @@ is whether augmenting the agent's state with a \\emph{demand forecast} improves
 the learned policy, or whether a demand-blind controller already captures most
 of the attainable value. We study this with a Proximal Policy Optimization (PPO)
 agent on a lead-time inventory environment, comparing policies trained
-\\emph{with} and \\emph{without} a one-step demand forecast across multiple demand
-profiles, two forecasting models (linear regression and a random forest),
-repeated seeds, and robustness scenarios (noisy forecasts and a carbon-aware
-cost term). Once observations are normalized and the reward is shaped as a
-bounded service level, the forecast yields a statistically significant mean
-advantage of $+0.146$ ($\\approx 19\\%$, $t=4.54$). The benefit is
-\\emph{heterogeneous} across items (per-item advantage $-0.04, +0.29, +0.19$)
-and the two forecasting models are statistically indistinguishable, indicating
-that forecast \\emph{availability} matters more than forecast model choice. We
-release a reproducible pipeline and an interactive in-browser digital twin.`,
+\\emph{with} and \\emph{without} a one-step demand forecast across two demand
+regimes---a smooth synthetic generator and the real, highly intermittent Walmart
+series from the M5 Forecasting competition (Kaggle)---two forecasting models
+(linear regression and a random forest), repeated seeds, and robustness
+scenarios (noisy forecasts and a carbon-aware cost term). The headline result
+\\emph{depends on the demand regime}. On smooth synthetic demand the forecast
+yields a significant mean advantage of $+0.146$ ($\\approx 19\\%$, $t=4.54$). On
+the real M5 items, which are $74$--$91\\%$ zeros, the \\emph{same} pipeline shows
+the forecast \\emph{hurts}: a mean advantage of $-2.13$ ($t=-12.1$), helping in
+only $17\\%$ of runs. In both regimes the two forecasters are statistically
+indistinguishable, so model choice is immaterial; what matters is whether a
+next-step point forecast is informative at all---which it is for seasonal demand
+but not for sparse, intermittent sales. We release a fully reproducible pipeline
+(which fetches the M5 data automatically) and an interactive in-browser digital
+twin.`,
   },
 
   introduction: {
@@ -395,42 +404,39 @@ state and reward.}
   results: {
     html: `<h3 class="psub">A. Experimental setup</h3>
       <p><strong>Data collection and provenance.</strong> We are explicit about
-      where the demand data comes from, because it bounds the interpretation of
-      every number below. Our pipeline supports <em>two</em> sources, selected
-      automatically at run time:</p>
+      where the demand data comes from, because&mdash;as our results show&mdash;it
+      <em>determines the conclusion</em>. We evaluate on <em>two</em> regimes:</p>
       <ul>
-        <li><strong>Real data (optional).</strong> The intended real-world source
-          is the <em>M5 Forecasting&ndash;Accuracy</em> competition dataset hosted
-          on Kaggle [5], [26], specifically the file
-          <code>sales_train_validation.csv</code>. Our pipeline will download it
-          automatically from Kaggle when a valid API token is configured and the
-          competition rules have been accepted, or load it from disk if present
-          (including a compressed <code>.gz</code>/<code>.zip</code> copy, since
-          the raw file is $\\approx$114&nbsp;MB). M5 contains 42,840 daily Walmart
-          unit-sales series; each item's row of <code>d_1 \\dots d_T</code> columns
-          becomes one demand series. For the runs reported here this file was
-          <em>not</em> available in the execution sandbox, so it was not used.</li>
-        <li><strong>Synthetic data (used here).</strong> When the M5 file is
-          absent, the pipeline falls back to a <em>reproducible synthetic
-          generator</em> seeded by a fixed integer, so every run is bit-for-bit
-          repeatable. <strong>All numbers reported in this paper come from this
-          synthetic generator</strong>, not from real retail data; we state this
-          plainly to avoid overclaiming.</li>
+        <li><strong>Regime&nbsp;R (real data).</strong> The
+          <em>M5 Forecasting&ndash;Accuracy</em> competition dataset hosted on
+          Kaggle [5], [26], file <code>sales_train_validation.csv</code> (30,490
+          daily Walmart unit-sales series; each item's row of
+          <code>d_1 \\dots d_T</code> columns becomes one demand series). The raw
+          CSV is $\\approx$120&nbsp;MB, so we distribute a $\\approx$16&nbsp;MB
+          zip; the pipeline loads it directly (pandas reads the <code>.zip</code>
+          transparently) and can also auto-download it from Kaggle or a mirror.
+          These series are strongly <em>intermittent</em>: the five items we
+          evaluate are 74&ndash;91\\% zeros with mean daily sales below one unit.</li>
+        <li><strong>Regime&nbsp;S (synthetic data).</strong> A reproducible,
+          seeded generator producing <em>smooth, strongly seasonal</em> demand.
+          This serves as an idealized best case for forecasting: a controlled
+          regime where next-day demand is genuinely predictable.</li>
       </ul>
-      <p>Each synthetic series of length $T$ (here $T\\approx 1000$ days) for item
+      <p>Reporting both regimes is the point of the paper: it lets us ask not
+      only <em>whether</em> a forecast helps, but <em>under what demand
+      structure</em> it helps. For Regime&nbsp;R we evaluate five items spread
+      across the M5 categories (Hobbies, Household, Foods) and U.S. states.</p>
+      <p>Each Regime&nbsp;S series of length $T$ ($T\\approx 1000$ days) for item
       $i$ is generated as</p>
       $$d_t^{(i)} = \\big\\lfloor \\max(0,\\; b_i + A^w_i\\sin(\\tfrac{2\\pi t}{7}+\\varphi^w_i)
         + A^y_i\\sin(\\tfrac{2\\pi t}{365}+\\varphi^y_i) + \\kappa_i t + \\varepsilon_t)\\big\\rceil,$$
       <p>with a base level $b_i$, weekly and yearly seasonal amplitudes
       $A^w_i, A^y_i$ and phases $\\varphi^w_i,\\varphi^y_i$, a small linear trend
       $\\kappa_i$, and Gaussian noise $\\varepsilon_t\\sim\\mathcal{N}(0,\\sigma^2)$;
-      all drawn from fixed ranges by the seeded generator. The weekly and yearly
-      terms are deliberately strong so that <em>anticipation</em> is rewarded,
-      making this a fair&mdash;if idealized&mdash;testbed for the forecast
-      question. We emphasize that synthetic demand is a controlled stand-in; the
-      intermittent, promotion-driven structure of real M5 series [5], [23] is
-      only partially captured, and confirming the findings on M5 is immediate
-      future work (Section&nbsp;V).</p>
+      all drawn from fixed ranges by the seeded generator. The seasonal terms are
+      deliberately strong so that <em>anticipation</em> is rewarded. By contrast,
+      Regime&nbsp;R (M5) is sparse and intermittent, so a next-day point forecast
+      is far less informative&mdash;the central tension this paper exposes.</p>
 
       <p><strong>Protocol.</strong> For each item we train both agents
       (with/without forecast) using each forecaster&mdash;ordinary least squares
@@ -443,110 +449,112 @@ state and reward.}
       is the mean per-step reward; the quantity of interest is the
       <em>advantage</em> $\\Delta = \\bar r_{\\text{fc}} - \\bar r_{\\text{base}}$.</p>
 
-      <h3 class="psub">B. Does the forecast help?</h3>
-      <p>Table I reports mean rewards. Across all configurations the forecast
-      produces a positive mean advantage of $+0.146$ (standard deviation
-      $0.19$), which is $\\approx 19\\%$ of the baseline reward and statistically
-      significant against the null of no effect ($t = 4.54$). The advantage
-      survives both robustness scenarios: it is essentially unchanged under
-      forecast noise ($+0.15$) and under the carbon penalty ($+0.14$),
-      indicating the benefit is not an artifact of a particular cost structure
-      or of noiseless forecasts.</p>
+      <h3 class="psub">B. Smooth demand (Regime S): the forecast helps</h3>
+      <p>On the seasonal synthetic data the forecast produces a positive mean
+      advantage of $+0.146$ (SD $0.19$), $\\approx 19\\%$ of the baseline reward
+      and significant against the null of no effect ($t = 4.54$; Table I). The
+      advantage is essentially unchanged under forecast noise ($+0.15$) and under
+      the carbon penalty ($+0.14$), so it is not an artifact of a particular cost
+      structure or of noiseless forecasts. Figure&nbsp;2 shows all bars positive
+      and of similar height across forecaster and scenario.</p>
 
       <table class="metrics ptab">
-        <caption>TABLE I. Mean reward (service level), forecast vs. baseline, by forecaster and scenario (synthetic demand).</caption>
+        <caption>TABLE I. Regime&nbsp;S (synthetic): mean service-level reward, forecast vs. baseline, by forecaster and scenario.</caption>
         <tr><th>Forecaster</th><th>Scenario</th><th>Reward (fc)</th><th>Reward (base)</th><th>Advantage $\\Delta$</th></tr>
-        <tr><td>Linear</td><td>base</td><td>0.901</td><td>0.753</td><td>+0.148</td></tr>
-        <tr><td>Linear</td><td>noisy fc</td><td>0.905</td><td>0.753</td><td>+0.152</td></tr>
-        <tr><td>Linear</td><td>carbon</td><td>0.883</td><td>0.740</td><td>+0.143</td></tr>
-        <tr><td>Random forest</td><td>base</td><td>0.895</td><td>0.754</td><td>+0.141</td></tr>
-        <tr><td>Random forest</td><td>noisy fc</td><td>0.908</td><td>0.753</td><td>+0.155</td></tr>
-        <tr><td>Random forest</td><td>carbon</td><td>0.876</td><td>0.741</td><td>+0.135</td></tr>
+        <tr><td>Linear</td><td>base</td><td>0.901</td><td>0.753</td><td class="pos">+0.148</td></tr>
+        <tr><td>Linear</td><td>noisy fc</td><td>0.905</td><td>0.753</td><td class="pos">+0.152</td></tr>
+        <tr><td>Linear</td><td>carbon</td><td>0.883</td><td>0.740</td><td class="pos">+0.143</td></tr>
+        <tr><td>Random forest</td><td>base</td><td>0.895</td><td>0.754</td><td class="pos">+0.141</td></tr>
+        <tr><td>Random forest</td><td>noisy fc</td><td>0.908</td><td>0.753</td><td class="pos">+0.155</td></tr>
+        <tr><td>Random forest</td><td>carbon</td><td>0.876</td><td>0.741</td><td class="pos">+0.135</td></tr>
       </table>
 
-      <div class="figbox">
-        <img src="fig_advantage.png" alt="Mean forecast advantage by forecaster and scenario" class="pfig"/>
-        <p class="figcap">Fig. 2. Mean forecast advantage
-          $\\Delta=\\bar r_{\\text{fc}}-\\bar r_{\\text{base}}$ by forecaster and
-          scenario (error bars: $\\pm$1 SD). All bars are positive and of similar
-          height, showing the forecast helps consistently and that the two
-          forecasters are essentially interchangeable.</p>
-      </div>
-
-      <h3 class="psub">C. The benefit is heterogeneous</h3>
-      <p>The aggregate hides substantial per-item variation (Table II). On one
-      profile the forecast slightly <em>hurts</em> ($\\Delta = -0.04$), because a
-      demand-blind base-stock-like policy is already near-optimal there; on
-      others it helps markedly ($+0.29$, $+0.19$). This heterogeneity is the most
-      practically important finding: the value of a forecast depends on the
-      demand profile, and a blanket "always add a forecast" recommendation is not
-      warranted.</p>
+      <h3 class="psub">C. Real M5 demand (Regime R): the forecast hurts</h3>
+      <p>Running the <em>identical</em> pipeline on the real, intermittent M5
+      items reverses the conclusion. The mean advantage is $-2.13$ (SD $1.36$),
+      strongly significant in the negative direction ($t=-12.1$), and the
+      forecast helps in only $17\\%$ of the $60$ runs (Table II). Because M5
+      items are 74&ndash;91\\% zeros, a next-day point forecast is dominated by
+      zeros and injects misleading signal; the demand-blind policy, which learns
+      a stable order-up-to level, is simply better. Figure&nbsp;3 shows the
+      per-item advantage is negative for every item (one household item is only
+      mildly negative). This is the paper's central result: <strong>the value of
+      a forecast is regime-dependent</strong>&mdash;clearly positive for smooth
+      seasonal demand, clearly negative for sparse intermittent demand.</p>
 
       <table class="metrics ptab">
-        <caption>TABLE II. Per-item forecast advantage (mean over seeds and scenarios).</caption>
-        <tr><th>Item</th><th>Mean $\\Delta$</th><th>Std</th><th>Min</th><th>Max</th></tr>
-        <tr><td>0</td><td>&minus;0.04</td><td>0.01</td><td>&minus;0.06</td><td>&minus;0.03</td></tr>
-        <tr><td>1</td><td>+0.29</td><td>0.06</td><td>+0.23</td><td>+0.36</td></tr>
-        <tr><td>2</td><td>+0.19</td><td>0.23</td><td>&minus;0.07</td><td>+0.41</td></tr>
+        <caption>TABLE II. Regime&nbsp;R (real M5): per-item forecast advantage, mean $\\pm$ SD over seeds and scenarios. All items 74&ndash;91\\% zeros.</caption>
+        <tr><th>M5 item</th><th>Category</th><th>% zeros</th><th>Advantage $\\Delta$</th></tr>
+        <tr><td>HOBBIES_1_001_CA_1</td><td>Hobbies</td><td>78%</td><td class="neg">&minus;2.39 ± 1.41</td></tr>
+        <tr><td>HOUSEHOLD_2_429_CA_3</td><td>Household</td><td>85%</td><td class="neg">&minus;0.47 ± 1.13</td></tr>
+        <tr><td>FOODS_3_827_TX_1</td><td>Foods</td><td>91%</td><td class="neg">&minus;2.73 ± 0.98</td></tr>
+        <tr><td>HOUSEHOLD_2_428_WI_1</td><td>Household</td><td>88%</td><td class="neg">&minus;3.13 ± 0.40</td></tr>
+        <tr><td>FOODS_3_827_WI_3</td><td>Foods</td><td>74%</td><td class="neg">&minus;1.92 ± 0.98</td></tr>
       </table>
 
       <div class="figbox">
-        <img src="fig_peritem.png" alt="Per-item forecast advantage with error bars" class="pfig"/>
-        <p class="figcap">Fig. 3. Per-item forecast advantage (mean $\\pm$ one
-          standard deviation over seeds and scenarios). The benefit is strongly
-          heterogeneous: slightly negative for item&nbsp;0, large and reliable
-          for item&nbsp;1, and large but high-variance for item&nbsp;2.</p>
+        <img src="fig_advantage.png" alt="Mean forecast advantage by forecaster and scenario on real M5" class="pfig"/>
+        <p class="figcap">Fig. 2. Regime&nbsp;R (real M5): mean forecast advantage
+          $\\Delta=\\bar r_{\\text{fc}}-\\bar r_{\\text{base}}$ by forecaster and
+          scenario (error bars: $\\pm$1 SD). Every bar is strongly negative and
+          the two forecasters are indistinguishable&mdash;on intermittent demand
+          the forecast consistently hurts.</p>
       </div>
 
-      <h3 class="psub">D. Availability versus model choice</h3>
-      <p>The two forecasters are statistically indistinguishable in both forecast
-      accuracy (MAE $0.99$ for linear vs.\\ $1.00$ for the random forest) and in
-      the downstream reward they induce. In other words, having <em>a</em>
-      forecast in the state is what matters; the additional capacity of a random
-      forest buys nothing here. For practitioners this is encouraging&mdash;a
-      cheap linear forecaster suffices&mdash;and it cautions against assuming that
-      a more accurate forecaster will automatically yield better control.</p>
+      <div class="figbox">
+        <img src="fig_peritem.png" alt="Per-item forecast advantage on real M5" class="pfig"/>
+        <p class="figcap">Fig. 3. Regime&nbsp;R (real M5): per-item forecast
+          advantage (mean $\\pm$1 SD). The advantage is negative for all five
+          items spanning Hobbies, Household, and Foods across CA/TX/WI stores.</p>
+      </div>
+
+      <h3 class="psub">D. Model choice is immaterial in both regimes</h3>
+      <p>In <em>both</em> regimes the linear and random-forest forecasters are
+      statistically indistinguishable&mdash;in accuracy (Regime&nbsp;R MAE
+      $0.69$ vs.\\ $0.72$; Regime&nbsp;S $0.99$ vs.\\ $1.00$) and in the
+      downstream reward they induce (Regime&nbsp;R advantage $-2.13$ vs.\\
+      $-2.12$). The extra capacity of a random forest buys nothing. What governs
+      the outcome is not <em>which</em> forecaster is used but <em>whether a
+      point forecast carries usable signal</em>&mdash;which depends on the demand
+      regime, not the model.</p>
 
       <h3 class="psub">E. Discussion and limitations</h3>
-      <p>Three caveats bound these claims. First, the headline numbers use
-      synthetic demand; the pipeline reads real M5 data automatically when
-      present, and reproducing the study there is immediate future work. Second,
-      PPO is trained on a modest step budget for tractability, which inflates
-      seed variance (visible for item 2); longer training would tighten the
-      estimates. Third, evaluation is in-sample along each item's series; a
-      temporal train/test split for the rollout would strengthen external
-      validity. None of these undermines the central, repeated pattern: the
-      forecast helps on average, unevenly across items, and its <em>presence</em>
-      matters more than its <em>model</em>.</p>`,
+      <p>The contrast between Regimes&nbsp;S and R is the key message: a
+      forecast-aware RL policy that looks excellent on smooth synthetic demand
+      can be actively harmful on the real, intermittent demand it is meant to
+      serve. This is a cautionary tale against validating inventory-RL systems
+      only on idealized data. Three caveats bound the quantitative claims.
+      First, we evaluate five M5 items; a larger sample would sharpen the Regime
+      R estimates, though the direction is unambiguous ($t=-12.1$). Second, PPO
+      is trained on a modest step budget for tractability, which inflates seed
+      variance; longer training would tighten the estimates. Third, we use a
+      <em>point</em> forecast&mdash;for intermittent demand a probabilistic or
+      count-based forecast (e.g., Croston-type or a distributional model) exposed
+      to the agent is the natural next step, and we conjecture it would recover
+      value where the point forecast fails.</p>`,
     tex: `\\subsection{Data collection and provenance}
-We are explicit about data provenance, as it bounds every result below. The
-pipeline supports two sources, selected automatically at run time.
-\\emph{Real data (optional):} the intended real-world source is the \\emph{M5
-Forecasting--Accuracy} competition dataset hosted on
-Kaggle~\\cite{makridakis2022m5,kaggle_m5}, specifically
-\\texttt{sales\\_train\\_validation.csv}. The pipeline downloads it automatically
-from Kaggle when a valid API token is configured and the competition rules have
-been accepted, or loads it from disk if present (including a compressed
-\\texttt{.gz}/\\texttt{.zip} copy, as the raw file is $\\approx 114$~MB). M5
-contains 42{,}840 daily Walmart unit-sales series, and each item's
-$d_1\\dots d_T$ row becomes one demand series. For the reported runs this file
-was not available in the execution sandbox, so it was not used.
-\\emph{Synthetic data (used here):} when the M5 file is absent, the pipeline
-falls back to a reproducible synthetic generator seeded by a fixed integer.
-\\textbf{All numbers reported in this paper come from this synthetic generator},
-not from real retail data. Each series of length $T\\approx 1000$ for item $i$ is
+We are explicit about data provenance because---as our results show---it
+\\emph{determines the conclusion}. We evaluate two regimes. \\emph{Regime~R
+(real data)}: the \\emph{M5 Forecasting--Accuracy} competition dataset hosted on
+Kaggle~\\cite{makridakis2022m5,kaggle_m5}, file
+\\texttt{sales\\_train\\_validation.csv} (30{,}490 daily Walmart unit-sales
+series; each item's $d_1\\dots d_T$ row is one demand series). The raw CSV is
+$\\approx 120$~MB, so we distribute a $\\approx 16$~MB zip that the pipeline reads
+directly (and can auto-download from Kaggle or a mirror). The five items we
+evaluate are strongly \\emph{intermittent}: $74$--$91\\%$ zeros with mean daily
+sales below one unit. \\emph{Regime~S (synthetic data)}: a reproducible, seeded
+generator producing smooth, strongly seasonal demand---an idealized best case
+for forecasting. Reporting both lets us ask not only \\emph{whether} a forecast
+helps but \\emph{under what demand structure}. Each Regime~S series of length
+$T\\approx 1000$ for item $i$ is
 \\begin{equation}
 d_t^{(i)}=\\Big\\lfloor\\max\\big(0,\\, b_i + A^w_i\\sin(\\tfrac{2\\pi t}{7}+\\varphi^w_i)
 + A^y_i\\sin(\\tfrac{2\\pi t}{365}+\\varphi^y_i) + \\kappa_i t + \\varepsilon_t\\big)\\Big\\rceil,
 \\end{equation}
-with base level $b_i$, seasonal amplitudes/phases $A^w_i,A^y_i,\\varphi^w_i,
-\\varphi^y_i$, trend $\\kappa_i$, and noise
-$\\varepsilon_t\\sim\\mathcal{N}(0,\\sigma^2)$, all drawn from fixed ranges by the
-seeded generator. The seasonal terms are deliberately strong so anticipation is
-rewarded. Synthetic demand is a controlled stand-in; the intermittent,
-promotion-driven structure of real M5 series~\\cite{makridakis2022m5,
-makridakis2020m4} is only partially captured, and confirming the findings on M5
-is immediate future work (Section~\\ref{sec:conclusion}).
+with base level $b_i$, seasonal amplitudes/phases, trend $\\kappa_i$, and noise
+$\\varepsilon_t\\sim\\mathcal{N}(0,\\sigma^2)$. By contrast Regime~R (M5) is sparse,
+so a next-day point forecast is far less informative---the central tension this
+paper exposes.
 
 \\subsection{Protocol}
 For each item we train both agents (with/without forecast) using each
@@ -559,16 +567,16 @@ Gymnasium interface~\\cite{towers2024gym}. The primary metric is mean per-step
 reward; the quantity of interest is the advantage
 $\\Delta=\\bar r_{\\mathrm{fc}}-\\bar r_{\\mathrm{base}}$.
 
-\\subsection{Does the forecast help?}
-Table~\\ref{tab:main} reports mean rewards. Across all configurations the
-forecast yields a positive mean advantage of $+0.146$ (s.d.\\ $0.19$),
-$\\approx 19\\%$ of the baseline reward and significant against the null of no
-effect ($t=4.54$). The advantage survives both robustness scenarios: essentially
-unchanged under forecast noise ($+0.15$) and the carbon penalty ($+0.14$).
+\\subsection{Smooth demand (Regime S): the forecast helps}
+On the seasonal synthetic data the forecast yields a positive mean advantage of
+$+0.146$ (s.d.\\ $0.19$), $\\approx 19\\%$ of the baseline reward and significant
+against the null of no effect ($t=4.54$; Table~\\ref{tab:synth}). It is
+essentially unchanged under forecast noise ($+0.15$) and the carbon penalty
+($+0.14$).
 
 \\begin{table}[t]\\centering
-\\caption{Mean reward (service level), forecast vs.\\ baseline, by forecaster and
-scenario (synthetic demand).}\\label{tab:main}
+\\caption{Regime~S (synthetic): mean service-level reward, forecast vs.\\
+baseline, by forecaster and scenario.}\\label{tab:synth}
 \\begin{tabular}{llccc}
 \\toprule
 Forecaster & Scenario & Reward (fc) & Reward (base) & Advantage $\\Delta$\\\\
@@ -583,112 +591,123 @@ Random forest & carbon   & 0.876 & 0.741 & $+0.135$\\\\
 \\end{tabular}
 \\end{table}
 
-\\begin{figure}[t]\\centering
-\\includegraphics[width=\\linewidth]{fig_advantage.png}
-\\caption{Mean forecast advantage $\\Delta=\\bar r_{\\mathrm{fc}}-\\bar
-r_{\\mathrm{base}}$ by forecaster and scenario (error bars: $\\pm$1 SD). All bars
-are positive and of similar height: the forecast helps consistently and the two
-forecasters are essentially interchangeable.}
-\\label{fig:advantage}
-\\end{figure}
-
-\\subsection{The benefit is heterogeneous}
-The aggregate hides substantial per-item variation (Table~\\ref{tab:item}). On
-one profile the forecast slightly \\emph{hurts} ($\\Delta=-0.04$), because a
-demand-blind policy is already near-optimal there; on others it helps markedly
-($+0.29$, $+0.19$). This heterogeneity is the most practically important finding:
-the value of a forecast depends on the demand profile, so a blanket \`\`always add
-a forecast'' recommendation is not warranted.
+\\subsection{Real M5 demand (Regime R): the forecast hurts}
+Running the \\emph{identical} pipeline on the real, intermittent M5 items
+reverses the conclusion. The mean advantage is $-2.13$ (s.d.\\ $1.36$), strongly
+significant in the negative direction ($t=-12.1$), with the forecast helping in
+only $17\\%$ of the $60$ runs (Table~\\ref{tab:m5}). Because M5 items are
+$74$--$91\\%$ zeros, a next-day point forecast is dominated by zeros and injects
+misleading signal, so the demand-blind order-up-to policy is simply better
+(Fig.~\\ref{fig:advantage}, Fig.~\\ref{fig:peritem}). This is the paper's central
+result: \\textbf{the value of a forecast is regime-dependent}---clearly positive
+for smooth seasonal demand, clearly negative for sparse intermittent demand.
 
 \\begin{table}[t]\\centering
-\\caption{Per-item forecast advantage (mean over seeds and scenarios).}
-\\label{tab:item}
-\\begin{tabular}{lcccc}
+\\caption{Regime~R (real M5): per-item forecast advantage, mean $\\pm$ s.d.\\ over
+seeds and scenarios. All items $74$--$91\\%$ zeros.}\\label{tab:m5}
+\\begin{tabular}{llcc}
 \\toprule
-Item & Mean $\\Delta$ & Std & Min & Max\\\\
+M5 item & Category & \\% zeros & Advantage $\\Delta$\\\\
 \\midrule
-0 & $-0.04$ & 0.01 & $-0.06$ & $-0.03$\\\\
-1 & $+0.29$ & 0.06 & $+0.23$ & $+0.36$\\\\
-2 & $+0.19$ & 0.23 & $-0.07$ & $+0.41$\\\\
+HOBBIES\\_1\\_001\\_CA\\_1 & Hobbies & 78 & $-2.39\\pm1.41$\\\\
+HOUSEHOLD\\_2\\_429\\_CA\\_3 & Household & 85 & $-0.47\\pm1.13$\\\\
+FOODS\\_3\\_827\\_TX\\_1 & Foods & 91 & $-2.73\\pm0.98$\\\\
+HOUSEHOLD\\_2\\_428\\_WI\\_1 & Household & 88 & $-3.13\\pm0.40$\\\\
+FOODS\\_3\\_827\\_WI\\_3 & Foods & 74 & $-1.92\\pm0.98$\\\\
 \\bottomrule
 \\end{tabular}
 \\end{table}
 
 \\begin{figure}[t]\\centering
+\\includegraphics[width=\\linewidth]{fig_advantage.png}
+\\caption{Regime~R (real M5): mean forecast advantage by forecaster and scenario
+(error bars $\\pm$1 SD). Every bar is strongly negative and the two forecasters
+are indistinguishable: on intermittent demand the forecast consistently hurts.}
+\\label{fig:advantage}
+\\end{figure}
+
+\\begin{figure}[t]\\centering
 \\includegraphics[width=\\linewidth]{fig_peritem.png}
-\\caption{Per-item forecast advantage (mean $\\pm$1 SD over seeds and scenarios).
-The benefit is strongly heterogeneous: slightly negative for item~0, large and
-reliable for item~1, large but high-variance for item~2.}
+\\caption{Regime~R (real M5): per-item forecast advantage (mean $\\pm$1 SD),
+negative for all five items across Hobbies, Household, and Foods.}
 \\label{fig:peritem}
 \\end{figure}
 
-\\subsection{Availability versus model choice}
-The two forecasters are statistically indistinguishable in both accuracy
-(MAE $0.99$ vs.\\ $1.00$) and in the downstream reward they induce. Having
-\\emph{a} forecast in the state is what matters; the extra capacity of a random
-forest buys nothing here. A cheap linear forecaster suffices, and one should not
-assume a more accurate forecaster automatically yields better control.
+\\subsection{Model choice is immaterial in both regimes}
+In both regimes the linear and random-forest forecasters are statistically
+indistinguishable---in accuracy (Regime~R MAE $0.69$ vs.\\ $0.72$; Regime~S
+$0.99$ vs.\\ $1.00$) and in downstream reward (Regime~R advantage $-2.13$ vs.\\
+$-2.12$). What governs the outcome is not \\emph{which} forecaster is used but
+\\emph{whether a point forecast carries usable signal}, which depends on the
+demand regime, not the model.
 
 \\subsection{Discussion and limitations}
-Three caveats bound these claims. First, the headline numbers use synthetic
-demand; the pipeline reads real M5 data automatically when present, and
-reproducing the study there is immediate future work. Second, PPO is trained on a
-modest step budget, inflating seed variance (visible for item~2). Third,
-evaluation is in-sample along each item's series; a temporal train/test split
-would strengthen external validity. None of these undermines the central
-pattern: the forecast helps on average, unevenly across items, and its
-\\emph{presence} matters more than its \\emph{model}.`,
+The contrast between Regimes~S and R is the key message: a forecast-aware RL
+policy that looks excellent on smooth synthetic demand can be actively harmful on
+the real, intermittent demand it is meant to serve---a caution against validating
+inventory-RL systems only on idealized data. Caveats: we evaluate five M5 items
+(a larger sample would sharpen estimates, though the direction is unambiguous,
+$t=-12.1$); PPO uses a modest step budget, inflating seed variance; and we use a
+\\emph{point} forecast---for intermittent demand a probabilistic or count-based
+forecast (e.g.\\ Croston-type) exposed to the agent is the natural next step and
+would likely recover value where the point forecast fails.`,
   },
 
   conclusion: {
-    html: `<p>We asked a deliberately narrow question&mdash;does adding a demand
-      forecast to the state improve a PPO inventory policy, and by how
-      much?&mdash;and answered it with a controlled ablation holding the
-      algorithm, environment, and reward fixed. With normalized observations, a
-      bounded service-level reward, and an order lead time that makes
-      anticipation necessary, the forecast delivers a small but statistically
-      significant mean advantage ($+0.146$, $\\approx 19\\%$, $t=4.54$). Two
-      qualifications matter as much as the headline: the benefit is
-      <em>heterogeneous</em> across demand profiles, and forecast
-      <em>availability</em> dominates forecast <em>model choice</em>. We release a
-      reproducible, dependency-light pipeline and an interactive in-browser
-      digital twin so that the result can be inspected and extended.</p>
+    html: `<p>We asked whether adding a demand forecast to the state improves a
+      PPO inventory policy&mdash;and answered it with a controlled ablation that
+      holds the algorithm, environment, and reward fixed and toggles only the
+      forecast, run on <em>two demand regimes</em>. The answer is not a simple
+      yes or no: it is <strong>regime-dependent</strong>. On smooth, strongly
+      seasonal synthetic demand the forecast gives a significant positive
+      advantage ($+0.146$, $\\approx 19\\%$, $t=4.54$). On the real,
+      highly intermittent M5 Walmart series the <em>same</em> pipeline makes the
+      forecast actively harmful ($-2.13$, $t=-12.1$, helping in only $17\\%$ of
+      runs), because a next-day point forecast of mostly-zero demand injects more
+      noise than signal. In both regimes the choice of forecaster (linear vs.
+      random forest) is immaterial&mdash;what matters is whether the forecast is
+      informative at all.</p>
+      <p>The practical lesson is a caution: an inventory-RL system validated only
+      on smooth or synthetic demand can look excellent yet fail on the sparse,
+      intermittent demand it will actually face. Reporting results on real M5
+      data&mdash;not just a synthetic stand-in&mdash;is what surfaces this.</p>
       <p><strong>Future work.</strong> Three directions follow directly. First,
-      <em>real data</em>: re-running the identical pipeline on the M5 series [5]
-      will test whether the synthetic-demand findings transfer to intermittent,
-      promotion-driven retail demand. Second, <em>richer settings</em>:
-      extending from a single stage to dual-sourcing and multi-echelon systems
-      [4], where the value of anticipation&mdash;and therefore of a
-      forecast&mdash;may be larger. Third, <em>end-to-end and probabilistic
-      forecasting</em>: coupling the forecaster and the policy more tightly, as in
-      end-to-end newsvendor and inventory models [13], [14], and exposing the
-      agent to forecast <em>uncertainty</em> rather than a point estimate. We
-      conjecture that the "availability over model choice" effect will weaken
-      precisely in regimes where distributional forecast information becomes
-      decision-relevant.</p>`,
+      <em>scale</em>: evaluate many more M5 items and categories to map exactly
+      where (and at what sparsity) the forecast flips from helpful to harmful.
+      Second, <em>richer settings</em>: dual-sourcing and multi-echelon systems
+      [4], where anticipation may matter more. Third, and most promising,
+      <em>probabilistic / count-based forecasting</em>: for intermittent demand a
+      Croston-type or distributional forecast&mdash;exposed to the agent as
+      uncertainty rather than a point estimate, building on end-to-end models
+      [13], [14]&mdash;is the natural remedy, and we conjecture it would recover
+      value precisely in the regime where the point forecast fails.</p>`,
     tex: `\\label{sec:conclusion}
-We asked a deliberately narrow question---does adding a demand forecast
-to the state improve a PPO inventory policy, and by how much?---and answered it
-with a controlled ablation holding the algorithm, environment, and reward fixed.
-With normalized observations, a bounded service-level reward, and an order lead
-time that makes anticipation necessary, the forecast delivers a small but
-significant mean advantage ($+0.146$, $\\approx 19\\%$, $t=4.54$). Two
-qualifications matter as much as the headline: the benefit is \\emph{heterogeneous}
-across demand profiles, and forecast \\emph{availability} dominates forecast
-\\emph{model choice}. We release a reproducible, dependency-light pipeline and an
-interactive in-browser digital twin so the result can be inspected and extended.
+We asked whether adding a demand forecast to the state improves a PPO inventory
+policy, and answered it with a controlled ablation that holds the algorithm,
+environment, and reward fixed and toggles only the forecast, run on \\emph{two
+demand regimes}. The answer is \\textbf{regime-dependent}. On smooth, strongly
+seasonal synthetic demand the forecast gives a significant positive advantage
+($+0.146$, $\\approx 19\\%$, $t=4.54$). On the real, highly intermittent M5
+Walmart series the \\emph{same} pipeline makes the forecast actively harmful
+($-2.13$, $t=-12.1$, helping in only $17\\%$ of runs), because a next-day point
+forecast of mostly-zero demand injects more noise than signal. In both regimes
+the choice of forecaster is immaterial; what matters is whether the forecast is
+informative at all.
 
-Three directions follow directly. First, \\emph{real data}: re-running the
-identical pipeline on the M5 series~\\cite{makridakis2022m5} tests whether the
-synthetic-demand findings transfer to intermittent, promotion-driven retail
-demand. Second, \\emph{richer settings}: extending from a single stage to
-dual-sourcing and multi-echelon systems~\\cite{gijsbrechts2022}, where the value
-of anticipation may be larger. Third, \\emph{end-to-end and probabilistic
-forecasting}: coupling forecaster and policy more tightly, as in end-to-end
-newsvendor and inventory models~\\cite{oroojlooy2020newsvendor,qi2023}, and
-exposing the agent to forecast \\emph{uncertainty} rather than a point estimate.
-We conjecture the \`\`availability over model choice'' effect weakens precisely
-where distributional forecast information becomes decision-relevant.`,
+The practical lesson is a caution: an inventory-RL system validated only on
+smooth or synthetic demand can look excellent yet fail on the sparse,
+intermittent demand it will actually face. Reporting results on real M5
+data---not just a synthetic stand-in---is what surfaces this.
+
+Three directions follow. First, \\emph{scale}: evaluate many more M5 items to map
+where, and at what sparsity, the forecast flips from helpful to harmful. Second,
+\\emph{richer settings}: dual-sourcing and multi-echelon
+systems~\\cite{gijsbrechts2022}. Third, and most promising,
+\\emph{probabilistic/count-based forecasting}: for intermittent demand a
+Croston-type or distributional forecast exposed to the agent as uncertainty
+(building on end-to-end models~\\cite{oroojlooy2020newsvendor,qi2023}) is the
+natural remedy, which we conjecture recovers value precisely where the point
+forecast fails.`,
   },
 };
 

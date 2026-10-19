@@ -2,3 +2,7 @@ __pycache__/
 *.pyc
 .venv/
 .ipynb_checkpoints/
+
+# Large M5 data (hosted in pandu1992/PPB_Research)
+sales_train_validation.zip
+sales_train_validation.csv

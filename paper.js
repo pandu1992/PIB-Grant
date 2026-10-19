@@ -459,6 +459,15 @@ state and reward.}
         <tr><td>Random forest</td><td>carbon</td><td>0.876</td><td>0.741</td><td>+0.135</td></tr>
       </table>
 
+      <div class="figbox">
+        <img src="fig_advantage.png" alt="Mean forecast advantage by forecaster and scenario" class="pfig"/>
+        <p class="figcap">Fig. 2. Mean forecast advantage
+          $\\Delta=\\bar r_{\\text{fc}}-\\bar r_{\\text{base}}$ by forecaster and
+          scenario (error bars: $\\pm$1 SD). All bars are positive and of similar
+          height, showing the forecast helps consistently and that the two
+          forecasters are essentially interchangeable.</p>
+      </div>
+
       <h3 class="psub">C. The benefit is heterogeneous</h3>
       <p>The aggregate hides substantial per-item variation (Table II). On one
       profile the forecast slightly <em>hurts</em> ($\\Delta = -0.04$), because a
@@ -475,6 +484,14 @@ state and reward.}
         <tr><td>1</td><td>+0.29</td><td>0.06</td><td>+0.23</td><td>+0.36</td></tr>
         <tr><td>2</td><td>+0.19</td><td>0.23</td><td>&minus;0.07</td><td>+0.41</td></tr>
       </table>
+
+      <div class="figbox">
+        <img src="fig_peritem.png" alt="Per-item forecast advantage with error bars" class="pfig"/>
+        <p class="figcap">Fig. 3. Per-item forecast advantage (mean $\\pm$ one
+          standard deviation over seeds and scenarios). The benefit is strongly
+          heterogeneous: slightly negative for item&nbsp;0, large and reliable
+          for item&nbsp;1, and large but high-variance for item&nbsp;2.</p>
+      </div>
 
       <h3 class="psub">D. Availability versus model choice</h3>
       <p>The two forecasters are statistically indistinguishable in both forecast
@@ -556,6 +573,15 @@ Random forest & carbon   & 0.876 & 0.741 & $+0.135$\\\\
 \\end{tabular}
 \\end{table}
 
+\\begin{figure}[t]\\centering
+\\includegraphics[width=\\linewidth]{fig_advantage.png}
+\\caption{Mean forecast advantage $\\Delta=\\bar r_{\\mathrm{fc}}-\\bar
+r_{\\mathrm{base}}$ by forecaster and scenario (error bars: $\\pm$1 SD). All bars
+are positive and of similar height: the forecast helps consistently and the two
+forecasters are essentially interchangeable.}
+\\label{fig:advantage}
+\\end{figure}
+
 \\subsection{The benefit is heterogeneous}
 The aggregate hides substantial per-item variation (Table~\\ref{tab:item}). On
 one profile the forecast slightly \\emph{hurts} ($\\Delta=-0.04$), because a
@@ -577,6 +603,14 @@ Item & Mean $\\Delta$ & Std & Min & Max\\\\
 \\bottomrule
 \\end{tabular}
 \\end{table}
+
+\\begin{figure}[t]\\centering
+\\includegraphics[width=\\linewidth]{fig_peritem.png}
+\\caption{Per-item forecast advantage (mean $\\pm$1 SD over seeds and scenarios).
+The benefit is strongly heterogeneous: slightly negative for item~0, large and
+reliable for item~1, large but high-variance for item~2.}
+\\label{fig:peritem}
+\\end{figure}
 
 \\subsection{Availability versus model choice}
 The two forecasters are statistically indistinguishable in both accuracy
@@ -727,8 +761,11 @@ function renderPage() {
 
 /* Convert inline LaTeX-ish math to readable plain text for the Word fallback.
    (Word opens the HTML wrapper natively; we only need the symbols legible.) */
+const SITE_BASE = "https://pandu1992.github.io/PIB-Grant/";
 function mathToText(s) {
   return s
+    // make figure images absolute so the downloaded .doc can load them
+    .replace(/src="(fig_[^"]+)"/g, `src="${SITE_BASE}$1"`)
     // drop inline SVG diagrams (Word can't render them); keep the caption text
     .replace(/<svg[\s\S]*?<\/svg>/gi, "[see Fig. 1 in the online/LaTeX version]")
     .replace(/\$\$([^$]+)\$\$/g, "<div style='text-align:center;font-style:italic;'>$1</div>")
@@ -774,8 +811,15 @@ function buildWord() {
   for (const [key, title] of SECTION_ORDER) {
     const sec = PAPER[key];
     if (!sec) continue;
-    // strip inline $...$ delimiters + common LaTeX macros for Word (plain-text math fallback)
-    const txt = mathToText(sec.html);
+    // Protect <img> tags from math substitution; rewrite to absolute URLs so the
+    // downloaded .doc can load the figures, then restore after mathToText().
+    const imgs = [];
+    let safe = sec.html.replace(/<img\b[^>]*>/gi, (m) => {
+      const abs = m.replace(/src="(fig_[^"]+)"/, `src="${SITE_BASE}$1"`);
+      imgs.push(abs);
+      return `@@IMG${imgs.length - 1}@@`;
+    });
+    let txt = mathToText(safe).replace(/@@IMG(\d+)@@/g, (_, i) => imgs[+i]);
     if (key === "abstract") {
       body += `<p><b><i>Abstract—</i></b> ${txt}</p><p><b><i>Index Terms—</i></b> ${META.keywords}.</p>`;
     } else {

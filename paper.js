@@ -416,7 +416,7 @@ state and reward.}
           zip; the pipeline loads it directly (pandas reads the <code>.zip</code>
           transparently) and can also auto-download it from Kaggle or a mirror.
           These series are strongly <em>intermittent</em>: the five items we
-          evaluate are 74&ndash;91\\% zeros with mean daily sales below one unit.</li>
+          evaluate are 74&ndash;91% zeros with mean daily sales below one unit.</li>
         <li><strong>Regime&nbsp;S (synthetic data).</strong> A reproducible,
           seeded generator producing <em>smooth, strongly seasonal</em> demand.
           This serves as an idealized best case for forecasting: a controlled
@@ -474,7 +474,7 @@ state and reward.}
       items reverses the conclusion. The mean advantage is $-2.13$ (SD $1.36$),
       strongly significant in the negative direction ($t=-12.1$), and the
       forecast helps in only $17\\%$ of the $60$ runs (Table II). Because M5
-      items are 74&ndash;91\\% zeros, a next-day point forecast is dominated by
+      items are 74&ndash;91% zeros, a next-day point forecast is dominated by
       zeros and injects misleading signal; the demand-blind policy, which learns
       a stable order-up-to level, is simply better. Figure&nbsp;3 shows the
       per-item advantage is negative for every item (one household item is only
@@ -483,7 +483,7 @@ state and reward.}
       seasonal demand, clearly negative for sparse intermittent demand.</p>
 
       <table class="metrics ptab">
-        <caption>TABLE II. Regime&nbsp;R (real M5): per-item forecast advantage, mean $\\pm$ SD over seeds and scenarios. All items 74&ndash;91\\% zeros.</caption>
+        <caption>TABLE II. Regime&nbsp;R (real M5): per-item forecast advantage, mean $\\pm$ SD over seeds and scenarios. All items 74&ndash;91% zeros.</caption>
         <tr><th>M5 item</th><th>Category</th><th>% zeros</th><th>Advantage $\\Delta$</th></tr>
         <tr><td>HOBBIES_1_001_CA_1</td><td>Hobbies</td><td>78%</td><td class="neg">&minus;2.39 ± 1.41</td></tr>
         <tr><td>HOUSEHOLD_2_429_CA_3</td><td>Household</td><td>85%</td><td class="neg">&minus;0.47 ± 1.13</td></tr>

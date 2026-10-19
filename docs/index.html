@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PIB 2026 — Forecast-aware RL for Inventory Control</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="title">
+      <h1>PIB 2026 — Forecast-aware Reinforcement Learning for Inventory Control</h1>
+      <p class="subtitle">Predictive forecasting + PPO digital twin · interactive demo runs entirely in your browser</p>
+    </div>
+    <div class="header-actions">
+      <a class="report-btn" href="paper.html">📄 Read the Paper</a>
+      <a class="report-btn ghost" href="https://github.com/pandu1992/PIB-Grant" target="_blank" rel="noopener">⌨ Source &amp; Notebook</a>
+      <div class="badge">ENGINE: BROWSER-JS</div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- LEFT: live digital twin -->
+    <section class="panel">
+      <div class="panel-head">
+        <span>Inventory Digital Twin — live rollout</span>
+        <span class="legend">
+          <i class="dot demand"></i> Demand
+          <i class="dot fc"></i> Forecast
+          <i class="dot base" style="background:#37d67a"></i> Inventory
+        </span>
+      </div>
+      <canvas id="twinCanvas" width="900" height="320"></canvas>
+
+      <div class="panel-head" style="margin-top:14px;">
+        <span>Reward per step — forecast vs baseline</span>
+        <span class="legend"><i class="dot fc"></i> With forecast <i class="dot base"></i> No forecast</span>
+      </div>
+      <canvas id="rewardCanvas" width="900" height="170"></canvas>
+
+      <p id="summary" class="muted" style="margin:12px 2px 0;font-size:13px;"></p>
+    </section>
+
+    <!-- RIGHT: controls + live stats -->
+    <aside>
+      <section class="panel">
+        <div class="panel-head"><span>Scenario controls</span></div>
+        <div class="controls">
+          <label class="ctl">seed <input type="number" id="seed" min="0" max="999" value="1" /></label>
+          <label class="ctl">lead time
+            <select id="lead"><option>1</option><option selected>2</option><option>3</option><option>4</option></select>
+          </label>
+        </div>
+        <div class="controls">
+          <label class="ctl">forecast noise
+            <input type="range" id="noise" min="0" max="4" step="0.5" value="0" />
+            <span id="noiseVal">0.0</span>
+          </label>
+        </div>
+        <div class="controls">
+          <label class="ctl"><input type="checkbox" id="carbon" /> carbon-aware penalty</label>
+        </div>
+        <button id="btnRun" class="btn primary" style="width:100%;">▶ Re-run twin</button>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><span>Live metrics</span></div>
+        <div class="statrow">
+          <div class="stat"><div class="k">Reward · forecast</div><div class="v accent" id="vFc">—</div></div>
+          <div class="stat"><div class="k">Reward · baseline</div><div class="v" id="vBase">—</div></div>
+          <div class="stat"><div class="k">Advantage</div><div class="v" id="vAdv">—</div></div>
+          <div class="stat"><div class="k">Service level</div><div class="v good" id="vFill">—</div></div>
+        </div>
+        <p class="muted" style="font-size:12px;margin:4px 2px 0;">
+          The browser twin tunes an order-up-to policy online as a lightweight
+          stand-in for the offline PPO agent, so it is directional, not identical
+          to the reported PPO numbers below.
+        </p>
+      </section>
+    </aside>
+  </main>
+
+  <!-- ===== Key findings ===== -->
+  <section class="section">
+    <h2>Key findings</h2>
+    <p>
+      Rigorous, reproducible evaluation: PPO agents trained <em>with</em> and
+      <em>without</em> a demand forecast across multiple items, two forecast
+      models (Linear vs RandomForest), repeated seeds, and robustness scenarios
+      (noisy forecast, carbon-aware). Numbers below are the reported PPO results.
+    </p>
+    <div class="cards">
+      <div class="card insight good">
+        <div class="tag">💡 Insight</div>
+        <h3>Forecast information pays off</h3>
+        <p>Average service-level reward rises <strong>+0.146 (~19%)</strong> with the
+          forecast, significant at <strong>t = 4.54</strong> — a real signal, unlike
+          the near-zero effect in the original un-normalised design.</p>
+      </div>
+      <div class="card insight warn">
+        <div class="tag">💡 Insight</div>
+        <h3>Benefit is heterogeneous</h3>
+        <p>Per item the advantage is <strong>−0.04 / +0.29 / +0.19</strong>: on some
+          demand profiles the demand-blind baseline is already near-optimal, so the
+          forecast adds little or slightly hurts.</p>
+      </div>
+      <div class="card insight">
+        <div class="tag">💡 Insight</div>
+        <h3>Availability &gt; model choice</h3>
+        <p>Linear and RandomForest are statistically indistinguishable
+          (MAE 0.99 vs 1.00). Having <em>a</em> forecast in the state matters far
+          more than which forecaster produced it.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Results table ===== -->
+  <section class="section">
+    <h2>Reported results (PPO)</h2>
+    <p class="muted">Service-level reward (fill-rate − normalised holding/carbon), mean ± SD over items × seeds. Synthetic demand; drop in the real M5 CSV to reproduce on it.</p>
+    <table class="metrics">
+      <tr><th>Forecaster</th><th>Scenario</th><th>Reward · forecast</th><th>Reward · baseline</th><th>Advantage</th></tr>
+      <tr><td>Linear</td><td>base</td><td>0.901 ± 0.023</td><td>0.753</td><td class="pos">+0.148 ± 0.21</td></tr>
+      <tr><td>Linear</td><td>noisy fc</td><td>0.905 ± 0.013</td><td>0.753</td><td class="pos">+0.152 ± 0.21</td></tr>
+      <tr><td>Linear</td><td>carbon</td><td>0.883 ± 0.029</td><td>0.740</td><td class="pos">+0.143 ± 0.20</td></tr>
+      <tr><td>RandomForest</td><td>base</td><td>0.895 ± 0.040</td><td>0.754</td><td class="pos">+0.141 ± 0.22</td></tr>
+      <tr><td>RandomForest</td><td>noisy fc</td><td>0.908 ± 0.009</td><td>0.753</td><td class="pos">+0.155 ± 0.20</td></tr>
+      <tr><td>RandomForest</td><td>carbon</td><td>0.876 ± 0.047</td><td>0.741</td><td class="pos">+0.135 ± 0.21</td></tr>
+    </table>
+    <p class="muted" style="margin-top:10px;">
+      Overall forecast advantage: <strong>+0.146</strong> (std 0.19) · helped <strong>56%</strong> of runs · <strong>t = 4.54</strong> vs 0.
+    </p>
+  </section>
+
+  <!-- ===== Method ===== -->
+  <section class="section">
+    <h2>What the model does</h2>
+    <div class="cards">
+      <div class="card"><div class="tag">1 · Forecast</div><h3>Predict demand</h3>
+        <p>Lag-7 features → next-day demand with LinearRegression / RandomForest.</p></div>
+      <div class="card"><div class="tag">2 · Digital twin</div><h3>Inventory env</h3>
+        <p>Order-up-to control with <strong>lead time</strong>, so anticipating demand is required — this is what makes the forecast useful.</p></div>
+      <div class="card"><div class="tag">3 · Learn</div><h3>PPO policy</h3>
+        <p>Normalised observations + a bounded <strong>service-level</strong> reward give stable training.</p></div>
+      <div class="card"><div class="tag">4 · Evaluate</div><h3>FC vs baseline</h3>
+        <p>Compare across items, seeds, and robustness scenarios with significance testing.</p></div>
+    </div>
+    <p>
+      Full derivations, illustrations, and the complete results-and-discussion are in the
+      <a href="paper.html">paper</a>. The entire pipeline is reproducible from
+      <a href="https://github.com/pandu1992/PIB-Grant" target="_blank" rel="noopener"><code>NEW_PIB_2026.ipynb</code> / <code>pib_rl_local.py</code></a>.
+    </p>
+  </section>
+
+  <footer>
+    PIB 2026 · Forecast-aware RL for inventory control · built for
+    <a href="https://pandu1992.github.io/profile/">pandu1992.github.io</a> ·
+    interactive twin runs client-side, no server.
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

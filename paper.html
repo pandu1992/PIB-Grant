@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Paper — PIB 2026 Forecast-aware RL for Inventory Control</title>
+<link rel="stylesheet" href="styles.css" />
+<style>
+  .paper-wrap { max-width: 900px; margin: 0 auto; padding: 24px 22px 60px; }
+  .paper-sheet {
+    background: #fbfdff; color: #10203a; border: 1px solid var(--line);
+    border-radius: 12px; padding: 40px 48px; font-family: "Times New Roman", Georgia, serif;
+    line-height: 1.55;
+  }
+  .ptitle { font-size: 22px; text-align: center; margin: 0 0 10px; color: #0b1b33; }
+  .pauthors { text-align: center; margin: 0 0 22px; color: #22406e; }
+  .paffil { color: #4a648c; font-size: 14px; }
+  .pabstract { font-size: 14px; }
+  .pkeywords { font-size: 14px; }
+  .psec { font-size: 16px; margin: 22px 0 6px; color: #0b1b33; }
+  .paper-sheet em { font-style: italic; }
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+  @media print { .topbar, .toolbar { display: none; } .paper-sheet { border: none; } }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="title">
+      <h1>PIB 2026 — Paper</h1>
+      <p class="subtitle">Forecast-aware Reinforcement Learning for Inventory Control</p>
+    </div>
+    <div class="header-actions">
+      <a class="report-btn ghost" href="index.html">← Interactive demo</a>
+      <a class="report-btn ghost" href="https://github.com/pandu1992/PIB-Grant" target="_blank" rel="noopener">⌨ Source</a>
+    </div>
+  </header>
+
+  <div class="paper-wrap">
+    <div class="toolbar">
+      <button id="btnWord" class="btn primary">📄 Download MS Word (.doc)</button>
+      <button id="btnTex" class="btn primary">⬇ Download LaTeX (IEEE .tex)</button>
+      <button class="btn" onclick="window.print()">🖨 Print / PDF</button>
+      <span class="muted" style="font-size:12px;">LaTeX uses the IEEEtran conference class — compile with pdfLaTeX.</span>
+    </div>
+
+    <article class="paper-sheet" id="paperBody">
+      <!-- rendered from paper.js -->
+    </article>
+  </div>
+
+  <!-- MathJax for on-page equations -->
+  <script>
+    window.MathJax = { tex: { inlineMath: [['$', '$']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+                       options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] } };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
+  <script src="paper.js"></script>
+</body>
+</html>

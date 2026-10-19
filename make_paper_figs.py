@@ -12,7 +12,12 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 os.environ.setdefault("MPLCONFIGDIR", "/tmp/mpl")
-df = pd.read_csv(os.path.join(os.path.dirname(__file__), "pib_rl_results.csv"))
+# Prefer the real-M5 results file if present; otherwise the generic one.
+_here = os.path.dirname(__file__)
+_m5 = os.path.join(_here, "pib_rl_results_m5.csv")
+_csv = _m5 if os.path.isfile(_m5) else os.path.join(_here, "pib_rl_results.csv")
+df = pd.read_csv(_csv)
+print(f"[figs] using {os.path.basename(_csv)}")
 
 plt.rcParams.update({
     "font.family": "serif", "font.size": 11,
@@ -36,22 +41,36 @@ ax.bar(x, means, yerr=sds, capsize=3, color=colors, edgecolor="#1b2b45", linewid
 ax.axhline(0, color="#c0392b", ls="--", lw=1)
 ax.set_xticks(x); ax.set_xticklabels(labels, fontsize=9)
 ax.set_ylabel(r"mean advantage $\Delta$")
-ax.set_title("Forecast advantage by forecaster and scenario")
+ax.set_title("Forecast advantage by forecaster and scenario (real M5)")
 ax.margins(y=0.15)
 fig.savefig(os.path.join(os.path.dirname(__file__), "fig_advantage.png"))
 plt.close(fig)
 
 # ---- Fig. 3: per-item advantage with error bars ----
-g = df.groupby("item")["advantage"].agg(["mean", "std"]).reset_index()
-fig, ax = plt.subplots(figsize=(5.6, 3.3))
-xi = g["item"].astype(int).values
+agg = {"advantage": ["mean", "std"]}
+if "item_id" in df.columns:
+    agg["item_id"] = "first"
+g = df.groupby("item").agg(mean=("advantage", "mean"),
+                           std=("advantage", "std")).reset_index()
+# short readable labels: use M5 category prefix when available, else item index
+if "item_id" in df.columns:
+    ids = df.groupby("item")["item_id"].first().reindex(g["item"]).values
+    def short(s):
+        p = str(s).split("_")
+        return (p[0][:4].title() + "\n" + "_".join(p[1:3])) if len(p) >= 3 else str(s)
+    labels = [short(s) for s in ids]
+else:
+    labels = [f"item {i}" for i in g["item"]]
+
+fig, ax = plt.subplots(figsize=(7.0, 3.4))
+xi = np.arange(len(g))
 bar_colors = ["#c0392b" if m < 0 else "#2e7d4f" for m in g["mean"]]
 ax.bar(xi, g["mean"], yerr=g["std"], capsize=4, color=bar_colors,
        edgecolor="#1b2b45", linewidth=0.6)
 ax.axhline(0, color="#555", ls="--", lw=1)
-ax.set_xticks(xi); ax.set_xticklabels([f"item {i}" for i in xi])
+ax.set_xticks(xi); ax.set_xticklabels(labels, fontsize=8)
 ax.set_ylabel(r"advantage $\Delta$ (mean $\pm$ 1 SD)")
-ax.set_title("Per-item forecast advantage (heterogeneity)")
+ax.set_title("Per-item forecast advantage (real M5 items)")
 fig.savefig(os.path.join(os.path.dirname(__file__), "fig_peritem.png"))
 plt.close(fig)
 

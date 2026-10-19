@@ -74,13 +74,48 @@ _M5_BASENAMES = [
     os.path.expanduser("~/PIB 2026/sales_train_validation.csv"),
     "/content/drive/MyDrive/PIB 2026/sales_train_validation.csv",  # original Colab path
 ]
-# For each base path, also accept these compressed suffixes.
+# For each base path, accept both:
+#   * a compressed copy that APPENDS a suffix  (sales_train_validation.csv.gz)
+#   * a compressed copy that REPLACES ".csv"   (sales_train_validation.zip)
 _COMPRESSED_SUFFIXES = ["", ".gz", ".zip", ".bz2", ".xz"]
-CANDIDATE_PATHS = [base + suf for base in _M5_BASENAMES for suf in _COMPRESSED_SUFFIXES]
+
+
+def _candidate_paths() -> list[str]:
+    paths = []
+    for base in _M5_BASENAMES:
+        for suf in _COMPRESSED_SUFFIXES:
+            paths.append(base + suf)                      # ...csv, ...csv.gz, ...csv.zip
+            if suf and base.endswith(".csv"):
+                paths.append(base[:-4] + suf)             # ...zip, ...gz (replacing .csv)
+    return paths
+
+
+CANDIDATE_PATHS = _candidate_paths()
 
 
 KAGGLE_COMPETITION = "m5-forecasting-accuracy"
 KAGGLE_FILE = "sales_train_validation.csv"
+
+# A zipped copy of the M5 file (origin: Kaggle m5-forecasting-accuracy) is also
+# mirrored in the author's companion repository, used as a no-credentials
+# reproducibility fallback.
+M5_MIRROR_URL = ("https://raw.githubusercontent.com/pandu1992/PPB_Research/"
+                 "main/sales_train_validation.zip")
+
+
+def download_m5_from_mirror(dest: str = "sales_train_validation.zip") -> str | None:
+    """Fetch the zipped M5 CSV from the companion GitHub mirror (no auth needed)."""
+    import urllib.request
+    if Path(dest).is_file():
+        return dest
+    try:
+        print(f"[mirror] Downloading M5 zip from {M5_MIRROR_URL} ...")
+        urllib.request.urlretrieve(M5_MIRROR_URL, dest)
+        print(f"[mirror] Saved to {dest}")
+        return dest
+    except Exception as e:  # noqa: BLE001
+        print(f"[mirror] Download failed: {e}")
+        return None
 
 
 def find_m5_csv() -> str | None:
@@ -202,6 +237,8 @@ def load_sales(n_items: int, seed: int = 0, use_kaggle: bool = True) -> tuple[pd
     path = find_m5_csv()
     if path is None and use_kaggle:
         path = download_m5_from_kaggle()  # None if no token / rules not accepted
+    if path is None:
+        path = download_m5_from_mirror()  # no-credentials GitHub mirror fallback
     if path:
         # pandas infers .gz/.zip/.bz2/.xz from the extension automatically.
         df = pd.read_csv(path, compression="infer")
@@ -397,6 +434,9 @@ def main():
     ap.add_argument("--seeds", type=int, default=3)
     ap.add_argument("--timesteps", type=int, default=12000)
     ap.add_argument("--lead-time", type=int, default=2)
+    ap.add_argument("--spread-items", action="store_true",
+                    help="sample items evenly across the dataset (diverse) "
+                         "instead of taking the first N consecutive rows")
     ap.add_argument("--out", type=str, default="pib_rl_results.csv")
     args = ap.parse_args()
 
@@ -404,12 +444,20 @@ def main():
         args.items, args.seeds, args.timesteps = 2, 2, 6000
 
     sales, source = load_sales(n_items=args.items)
-    n_items = min(args.items, len(sales))
+    # Choose which rows to evaluate. For real M5 (30,490 heterogeneous items)
+    # an evenly spread sample is far more representative than the first N rows
+    # (which are all HOBBIES_1).
+    if args.spread_items and len(sales) > args.items:
+        item_indices = list(np.linspace(0, len(sales) - 1, args.items, dtype=int))
+    else:
+        item_indices = list(range(min(args.items, len(sales))))
+
     forecasters = ["linear", "rf"]
 
     records = []
-    for item in range(n_items):
+    for item in item_indices:
         series = item_series(sales, item)
+        item_id = str(sales["id"].iloc[item]) if "id" in sales.columns else str(item)
         for fc in forecasters:
             for seed in range(args.seeds):
                 scenarios = {
@@ -422,8 +470,8 @@ def main():
                         series, forecaster=fc, seed=seed,
                         timesteps=args.timesteps, lead_time=args.lead_time, **kw)
                     records.append(dict(
-                        item=item, forecaster=fc, scenario=scen, seed=seed,
-                        reward_forecast=r_fc, reward_baseline=r_no,
+                        item=item, item_id=item_id, forecaster=fc, scenario=scen,
+                        seed=seed, reward_forecast=r_fc, reward_baseline=r_no,
                         advantage=r_fc - r_no, forecast_mae=mae))
                     print(f"item={item} fc={fc:6s} scen={scen:6s} seed={seed} "
                           f"| FC={r_fc:6.3f}  NoFC={r_no:6.3f}  adv={r_fc-r_no:+6.3f}  mae={mae:.3f}")

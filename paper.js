@@ -11,8 +11,8 @@
 
 const META = {
   title: "Forecast-Aware Reinforcement Learning for Inventory Control: When Does Demand Forecasting Help a PPO Policy?",
-  authors: "Pandu",                       // TODO: confirm author name(s)
-  affil: "BINUS University, Indonesia",    // TODO: confirm affiliation
+  authors: "Pandu Dwi Luhur Pambudi",
+  affil: "BINUS University, Indonesia",
   keywords: "reinforcement learning, inventory control, demand forecasting, PPO, digital twin, supply chain",
 };
 

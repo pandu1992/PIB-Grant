@@ -64,13 +64,23 @@ from stable_baselines3 import PPO
 # =============================================================================
 # 1. DATA LOADING  (dynamic path + synthetic fallback)
 # =============================================================================
-CANDIDATE_PATHS = [
+# The raw M5 file is ~114 MB, which exceeds GitHub's 25 MB web-upload limit.
+# A gzip/zip of this CSV is typically ~12-18 MB and fits, so we also look for
+# compressed variants; pandas reads them transparently via `compression="infer"`.
+_M5_BASENAMES = [
     "sales_train_validation.csv",
     "data/sales_train_validation.csv",
     "PIB 2026/sales_train_validation.csv",
     os.path.expanduser("~/PIB 2026/sales_train_validation.csv"),
     "/content/drive/MyDrive/PIB 2026/sales_train_validation.csv",  # original Colab path
 ]
+# For each base path, also accept these compressed suffixes.
+_COMPRESSED_SUFFIXES = ["", ".gz", ".zip", ".bz2", ".xz"]
+CANDIDATE_PATHS = [base + suf for base in _M5_BASENAMES for suf in _COMPRESSED_SUFFIXES]
+
+
+KAGGLE_COMPETITION = "m5-forecasting-accuracy"
+KAGGLE_FILE = "sales_train_validation.csv"
 
 
 def find_m5_csv() -> str | None:
@@ -78,6 +88,87 @@ def find_m5_csv() -> str | None:
         if Path(p).is_file():
             return p
     return None
+
+
+def _have_kaggle_credentials() -> bool:
+    """True if a Kaggle API token is available (env vars or ~/.kaggle/kaggle.json)."""
+    if os.environ.get("KAGGLE_USERNAME") and os.environ.get("KAGGLE_KEY"):
+        return True
+    return Path(os.path.expanduser("~/.kaggle/kaggle.json")).is_file()
+
+
+def download_m5_from_kaggle(dest_dir: str = "data") -> str | None:
+    """Download the M5 `sales_train_validation.csv` from the Kaggle competition
+    `m5-forecasting-accuracy` into `dest_dir`, returning the local path.
+
+    Requires (a) a Kaggle API token and (b) that the Kaggle account has accepted
+    the competition rules at
+    https://www.kaggle.com/competitions/m5-forecasting-accuracy/rules .
+    Returns None (with guidance) if either prerequisite is missing.
+    """
+    import shutil
+    import subprocess
+
+    if not _have_kaggle_credentials():
+        print(
+            "[kaggle] No Kaggle API token found. To enable auto-download:\n"
+            "  1. On kaggle.com -> Account -> 'Create New API Token' (downloads kaggle.json).\n"
+            "  2. Place it at ~/.kaggle/kaggle.json (chmod 600), OR set env vars\n"
+            "     KAGGLE_USERNAME and KAGGLE_KEY.\n"
+            "  3. Accept the competition rules at\n"
+            "     https://www.kaggle.com/competitions/m5-forecasting-accuracy/rules\n"
+            "Then re-run; the file will be fetched automatically."
+        )
+        return None
+
+    if shutil.which("kaggle") is None:
+        print("[kaggle] Credentials found but the `kaggle` CLI is not installed "
+              "(`pip install kaggle`).")
+        return None
+
+    Path(dest_dir).mkdir(parents=True, exist_ok=True)
+    print(f"[kaggle] Downloading {KAGGLE_FILE} from competition "
+          f"'{KAGGLE_COMPETITION}' ...")
+    try:
+        subprocess.run(
+            ["kaggle", "competitions", "download", "-c", KAGGLE_COMPETITION,
+             "-f", KAGGLE_FILE, "-p", dest_dir],
+            check=True,
+        )
+    except subprocess.CalledProcessError as e:
+        print(f"[kaggle] Download failed ({e}). Most common cause: the competition "
+              f"rules have not been accepted on your Kaggle account. Accept them at "
+              f"https://www.kaggle.com/competitions/{KAGGLE_COMPETITION}/rules")
+        return None
+
+    # Kaggle delivers the single file as a .zip; pandas can read it directly.
+    for cand in (Path(dest_dir) / f"{KAGGLE_FILE}.zip",
+                 Path(dest_dir) / KAGGLE_FILE):
+        if cand.is_file():
+            print(f"[kaggle] Saved to {cand}")
+            return str(cand)
+    print("[kaggle] Download reported success but file not found on disk.")
+    return None
+
+
+def validate_m5(df: pd.DataFrame) -> tuple[bool, str]:
+    """Sanity-check that a loaded frame really looks like M5 sales data.
+
+    Expected: an `id` column plus many `d_1, d_2, ...` day columns of
+    non-negative integer unit sales. Returns (ok, human-readable message).
+    """
+    day_cols = [c for c in df.columns if str(c).startswith("d_")]
+    if "id" not in df.columns:
+        return False, "missing 'id' column"
+    if len(day_cols) < 100:
+        return False, f"only {len(day_cols)} day (d_*) columns found; expected ~1900"
+    sample = df[day_cols[: min(50, len(day_cols))]].to_numpy()
+    if not np.issubdtype(sample.dtype, np.number):
+        return False, "day columns are not numeric"
+    if np.nanmin(sample) < 0:
+        return False, "found negative sales (unexpected for M5)"
+    return True, (f"OK: {len(df)} items x {len(day_cols)} days; "
+                  f"mean daily sales={np.nanmean(sample):.2f}")
 
 
 def make_synthetic_sales(n_items: int = 10, n_days: int = 1200, seed: int = 0) -> pd.DataFrame:
@@ -102,12 +193,28 @@ def make_synthetic_sales(n_items: int = 10, n_days: int = 1200, seed: int = 0) -
     return df
 
 
-def load_sales(n_items: int, seed: int = 0) -> tuple[pd.DataFrame, str]:
+def load_sales(n_items: int, seed: int = 0, use_kaggle: bool = True) -> tuple[pd.DataFrame, str]:
+    """Resolve the demand data in priority order:
+       1. a local M5 file (.csv or compressed .gz/.zip/.bz2/.xz),
+       2. auto-download from Kaggle if a token is configured (use_kaggle=True),
+       3. a reproducible synthetic generator (clearly flagged).
+    """
     path = find_m5_csv()
+    if path is None and use_kaggle:
+        path = download_m5_from_kaggle()  # None if no token / rules not accepted
     if path:
-        print(f"[data] Loaded real M5 data from: {path}")
-        return pd.read_csv(path), "m5"
-    print("[data] M5 CSV not found -> using reproducible SYNTHETIC demand.")
+        # pandas infers .gz/.zip/.bz2/.xz from the extension automatically.
+        df = pd.read_csv(path, compression="infer")
+        ok, msg = validate_m5(df)
+        if ok:
+            print(f"[data] Loaded REAL M5 data from: {path}")
+            print(f"[data] M5 validation {msg}")
+            return df, "m5"
+        print(f"[data] WARNING: {path} does not look like M5 ({msg}); "
+              f"falling back to SYNTHETIC demand.")
+    else:
+        print("[data] No M5 CSV available (local or Kaggle) "
+              "-> using reproducible SYNTHETIC demand.")
     return make_synthetic_sales(n_items=max(n_items, 10), seed=seed), "synthetic"
 
 

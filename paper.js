@@ -154,14 +154,101 @@ indistinguishable in downstream reward.
 in-browser digital twin.
 \\end{itemize}`,
   },
-  // related, method, results, conclusion added next...
+
+  related: {
+    html: `<p><strong>Classical inventory control.</strong> The theory of
+      optimal replenishment is mature. For a single stage with fixed ordering
+      cost, the $(s,S)$ policy is optimal, and without a fixed cost the
+      base-stock policy is optimal; Clark and Scarf established the optimality of
+      base-stock policies in serial multi-echelon systems [6], and Zipkin [7]
+      gives a comprehensive treatment. These results are powerful but assume
+      known, well-behaved demand distributions&mdash;assumptions that the
+      intermittent, seasonal retail demand of the M5 dataset [5] routinely
+      violates.</p>
+
+      <p><strong>Reinforcement learning for inventory.</strong> Reinforcement
+      learning [1] sidesteps distributional assumptions by learning directly from
+      interaction. Oroojlooyjadid et al. [3] applied a deep Q-network to the beer
+      game, demonstrating that a learned agent can cope with partners that behave
+      irrationally. Gijsbrechts et al. [4] provided a careful benchmark showing
+      that deep RL can match or approach strong heuristics on lost-sales,
+      dual-sourcing, and multi-echelon problems, while cautioning that tuning and
+      compute cost are substantial. Our environment and PPO agent [2] sit in this
+      tradition, but our focus is narrower and complementary: rather than
+      proposing a new algorithm or beating a heuristic, we isolate the marginal
+      value of a single state feature&mdash;the demand forecast.</p>
+
+      <p><strong>Forecasting and the forecasting&ndash;optimization interface.</strong>
+      The M5 competition [5] established that machine-learning forecasters
+      (notably gradient-boosted trees) are strong on retail demand, yet also that
+      forecast accuracy and downstream decision quality are not the same thing.
+      This gap motivates a line of work on integrating forecasting with
+      optimization. Our study contributes a controlled data point to that
+      interface: we vary forecast <em>availability</em> and forecast
+      <em>model</em> independently and measure the effect on a learned control
+      policy, rather than on a forecast-accuracy metric. The finding that
+      forecaster choice (linear vs.\\ random forest) is statistically
+      indistinguishable downstream, while forecast presence is not, is a concrete
+      illustration of this accuracy&ndash;decision distinction.</p>`,
+    tex: `\\textbf{Classical inventory control.} The theory of optimal
+replenishment is mature. For a single stage with a fixed ordering cost the
+$(s,S)$ policy is optimal, and without a fixed cost the base-stock policy is
+optimal; Clark and Scarf established the optimality of base-stock policies in
+serial multi-echelon systems~\\cite{clark1960}, and Zipkin~\\cite{zipkin2000}
+gives a comprehensive treatment. These results assume known, well-behaved demand
+distributions---assumptions that the intermittent, seasonal retail demand of the
+M5 dataset~\\cite{makridakis2022m5} routinely violates.
+
+\\textbf{Reinforcement learning for inventory.} Reinforcement
+learning~\\cite{sutton2018} sidesteps distributional assumptions by learning
+from interaction. Oroojlooyjadid et al.~\\cite{oroojlooy2022beer} applied a deep
+Q-network to the beer game, showing a learned agent can cope with partners that
+behave irrationally. Gijsbrechts et al.~\\cite{gijsbrechts2022} benchmarked deep
+RL on lost-sales, dual-sourcing, and multi-echelon problems, showing it can
+match strong heuristics while cautioning that tuning and compute cost are
+substantial. Our PPO agent~\\cite{schulman2017ppo} sits in this tradition, but
+our focus is complementary: rather than proposing a new algorithm, we isolate
+the marginal value of a single state feature---the demand forecast.
+
+\\textbf{The forecasting--optimization interface.} The M5
+competition~\\cite{makridakis2022m5} established that machine-learning
+forecasters are strong on retail demand, yet also that forecast accuracy and
+downstream decision quality differ. Our study contributes a controlled data
+point to this interface: we vary forecast \\emph{availability} and forecast
+\\emph{model} independently and measure the effect on a learned control policy
+rather than on a forecast-accuracy metric. That forecaster choice (linear vs.\\
+random forest) is statistically indistinguishable downstream, while forecast
+presence is not, concretely illustrates this accuracy--decision distinction.`,
+  },
+  // method, results, conclusion added next...
 };
+
+/* IEEE references (numbered). Order here = citation number used in the text. */
+const REFERENCES = [
+  "R. S. Sutton and A. G. Barto, \\emph{Reinforcement Learning: An Introduction}, 2nd ed. Cambridge, MA, USA: MIT Press, 2018.",
+  "J. Schulman, F. Wolski, P. Dhariwal, A. Radford, and O. Klimov, ``Proximal policy optimization algorithms,'' \\emph{arXiv:1707.06347}, 2017.",
+  "A. Oroojlooyjadid, M. Nazari, L. V. Snyder, and M. Tak\\'{a}\\v{c}, ``A deep Q-network for the beer game: Deep reinforcement learning for inventory optimization,'' \\emph{Manuf. Serv. Oper. Manag.}, vol. 24, no. 1, pp. 285--304, 2022.",
+  "J. Gijsbrechts, R. N. Boute, J. A. Van Mieghem, and D. J. Zhang, ``Can deep reinforcement learning improve inventory management? Performance on lost sales, dual-sourcing, and multi-echelon problems,'' \\emph{Manuf. Serv. Oper. Manag.}, vol. 24, no. 3, pp. 1349--1368, 2022.",
+  "S. Makridakis, E. Spiliotis, and V. Assimakopoulos, ``The M5 accuracy competition: Results, findings, and conclusions,'' \\emph{Int. J. Forecast.}, vol. 38, no. 4, pp. 1346--1364, 2022.",
+  "A. J. Clark and H. Scarf, ``Optimal policies for a multi-echelon inventory problem,'' \\emph{Manag. Sci.}, vol. 6, no. 4, pp. 475--490, 1960.",
+  "P. H. Zipkin, \\emph{Foundations of Inventory Management}. New York, NY, USA: McGraw-Hill, 2000.",
+];
+/* LaTeX \\bibitem keys, in the SAME order as REFERENCES (1..n). */
+const REF_KEYS = [
+  "sutton2018", "schulman2017ppo", "oroojlooy2022beer",
+  "gijsbrechts2022", "makridakis2022m5", "clark1960", "zipkin2000",
+];
+/* Plain-text (no \\emph) reference strings for the on-page / Word reference list. */
+function refPlain(r) {
+  return r.replace(/\\emph\{([^}]*)\}/g, "$1").replace(/``|''/g, '"')
+          .replace(/--/g, "\u2013").replace(/\\'\{([a-z])\}/gi, "$1").replace(/\\v\{([a-z])\}/gi, "$1");
+}
 
 /* ---------- order + display titles ---------- */
 const SECTION_ORDER = [
   ["abstract", "Abstract"],
   ["introduction", "Introduction"],
-  // ["related", "Related Work"],
+  ["related", "Related Work"],
   // ["method", "Methodology"],
   // ["results", "Results and Discussion"],
   // ["conclusion", "Conclusion"],
@@ -181,6 +268,10 @@ function renderPage() {
     } else {
       html += `<h2 class="psec">${title}</h2>${sec.html}`;
     }
+  }
+  if (REFERENCES && REFERENCES.length) {
+    html += `<h2 class="psec">References</h2><ol class="prefs">` +
+      REFERENCES.map(r => `<li>${refPlain(r)}</li>`).join("") + `</ol>`;
   }
   root.innerHTML = html;
   if (window.MathJax && window.MathJax.typesetPromise) window.MathJax.typesetPromise([root]);
@@ -218,6 +309,10 @@ function buildWord() {
       body += `<h2 style="font-size:11pt;">${title}</h2>${txt}`;
     }
   }
+  if (REFERENCES && REFERENCES.length) {
+    body += `<h2 style="font-size:11pt;">References</h2><ol>` +
+      REFERENCES.map(r => `<li>${refPlain(r)}</li>`).join("") + `</ol>`;
+  }
   return `<!DOCTYPE html><html xmlns:o='urn:schemas-microsoft-com:office:office'
 xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
 <head><meta charset='utf-8'><title>${META.title}</title>
@@ -247,6 +342,11 @@ function buildIEEE() {
     } else {
       s += `\\section{${title}}\n${sec.tex}\n`;
     }
+  }
+  if (REFERENCES && REFERENCES.length) {
+    s += `\\begin{thebibliography}{00}\n`;
+    REFERENCES.forEach((r, i) => { s += `\\bibitem{${REF_KEYS[i]}} ${r}\n`; });
+    s += `\\end{thebibliography}\n`;
   }
   s += `\\end{document}\n`;
   return s;
